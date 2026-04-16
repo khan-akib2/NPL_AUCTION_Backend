@@ -119,79 +119,140 @@ export default function CaptainDashboard() {
 
         {/* Auction panel */}
         <div className={`flex-1 flex flex-col gap-4 ${tab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl flex flex-col overflow-hidden" style={{ minHeight: '420px' }}>
-            {activeSession && activePlayer ? (
-              <div className="flex flex-col h-full">
-                {/* Player card */}
-                <div className="relative overflow-hidden bg-[#0a1628]" style={{ minHeight: '280px', flex: 1 }}>
+          {activeSession && activePlayer ? (
+            <>
+              {/* Main player card */}
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-2xl">
+                {/* Player photo section */}
+                <div className="relative h-64 lg:h-80 overflow-hidden bg-gradient-to-br from-[#0a1628] to-[#0d1e3a]">
                   {activePlayer.photo ? (
                     <>
                       <img src={activePlayer.photo} alt={activePlayer.name}
                         className="absolute inset-0 w-full h-full object-cover object-top" />
-                      <img src={activePlayer.photo} alt=""
-                        className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0d1e3a] via-[#0d1e3a]/60 to-transparent" />
                     </>
                   ) : (
-                    <div className="absolute inset-0 bg-[#0d1e3a]" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-32 h-32 rounded-full bg-[#c9a227]/10 flex items-center justify-center">
+                        <span className="text-6xl text-[#c9a227]/30">👤</span>
+                      </div>
+                    </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628] via-[#0a1628]/30 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-3">
-                    <div className="absolute left-0 right-0 top-0 h-px bg-[#c9a227]/20" />
-                    <p className="text-[#c9a227]/60 text-xs uppercase tracking-widest mb-1.5">{activePlayer.skills?.[0]}</p>
-                    <h2 className="text-xl font-black text-white uppercase tracking-tight leading-none mb-2">{activePlayer.name}</h2>
-                    <div className="flex flex-wrap gap-1">{activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}</div>
+                  
+                  {/* Player info overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5 lg:p-6">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[#c9a227] text-xs uppercase tracking-[0.15em] font-semibold mb-2 opacity-80">
+                          {activePlayer.skills?.[0] || 'Player'}
+                        </p>
+                        <h1 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tight leading-none mb-3">
+                          {activePlayer.name}
+                        </h1>
+                        <div className="flex flex-wrap gap-1.5">
+                          {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+                        </div>
+                      </div>
+                      <div className="bg-[#0a1628]/80 backdrop-blur-sm border border-[#c9a227]/20 rounded-lg px-3 py-2 text-center shrink-0">
+                        <p className="text-white/40 text-[10px] uppercase tracking-wider">Base</p>
+                        <p className="text-white font-bold text-sm">{activePlayer.basePrice}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Bid strip */}
-                <div className="border-t border-[#c9a227]/15 px-4 py-4 shrink-0">
-                  <div className="flex items-center justify-between mb-3">
+                {/* Bidding section */}
+                <div className="p-5 lg:p-6 bg-[#0a1628]/50">
+                  {/* Current bid display */}
+                  <div className="flex items-center justify-between mb-5 pb-5 border-b border-[#c9a227]/10">
                     <div>
-                      <p className="text-white/40 text-xs uppercase tracking-widest">Current Bid</p>
-                      <div className="flex items-baseline gap-1.5 mt-0.5">
-                        <span className="text-3xl font-black text-[#c9a227] tabular-nums">{activeSession.currentBid}</span>
-                        <span className="text-white/40 text-sm">pts</span>
+                      <p className="text-white/40 text-xs uppercase tracking-[0.12em] mb-1.5">Current Bid</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-4xl lg:text-5xl font-black text-[#c9a227] tabular-nums leading-none">
+                          {activeSession.currentBid}
+                        </span>
+                        <span className="text-white/30 text-base font-medium">pts</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white/40 text-xs uppercase tracking-widest">Status</p>
-                      <p className={`text-sm font-medium mt-0.5 ${isLeading ? 'text-white/70' : 'text-white/30'}`}>
-                        {activeSession.currentHighestBidderName
-                          ? isLeading ? '↑ Leading' : activeSession.currentHighestBidderName
-                          : 'No bids'}
-                      </p>
+                      <p className="text-white/40 text-xs uppercase tracking-[0.12em] mb-1.5">Leading</p>
+                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                        isLeading 
+                          ? 'bg-[#c9a227]/15 border border-[#c9a227]/30' 
+                          : 'bg-white/5 border border-white/10'
+                      }`}>
+                        {isLeading && <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />}
+                        <span className={`text-sm font-semibold ${isLeading ? 'text-[#c9a227]' : 'text-white/50'}`}>
+                          {activeSession.currentHighestBidderName
+                            ? isLeading ? 'You' : activeSession.currentHighestBidderName
+                            : 'No bids'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <button onClick={placeBid} disabled={!canBid || bidding}
-                    className="w-full bg-[#c9a227] text-[#0a1628] font-bold py-3 rounded-lg text-sm transition-opacity hover:bg-[#f0c040] disabled:opacity-20 flex items-center justify-center gap-2 active:scale-[0.99]">
-                    {bidding ? <Spinner size="sm" /> : `Bid ${activeSession.currentBid + 10} pts`}
+
+                  {/* Bid button */}
+                  <button 
+                    onClick={placeBid} 
+                    disabled={!canBid || bidding}
+                    className="w-full bg-[#c9a227] text-[#0a1628] font-black py-4 rounded-xl text-base transition-all hover:bg-[#f0c040] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg shadow-[#c9a227]/20 active:scale-[0.98]"
+                  >
+                    {bidding ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <>
+                        <span className="text-2xl">↑</span>
+                        <span>Place Bid · {activeSession.currentBid + 10} pts</span>
+                      </>
+                    )}
                   </button>
+                  
+                  {/* Status message */}
                   {!canBid && activeSession && (
-                    <p className="text-center text-white/40 text-xs mt-2">
-                      {team?.playerCount >= 7 ? 'Squad full' : `Need ${activeSession.currentBid + 10} pts · You have ${team?.budget}`}
-                    </p>
+                    <div className="mt-3 text-center">
+                      <p className="text-white/40 text-xs">
+                        {team?.playerCount >= 7 
+                          ? '⚠️ Squad is full (7/7 players)' 
+                          : `⚠️ Insufficient budget · Need ${activeSession.currentBid + 10} pts, have ${team?.budget} pts`
+                        }
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <p className="text-white/20 text-4xl mb-3">—</p>
-                <p className="text-white/40 text-sm">Waiting for auction to start</p>
-              </div>
-            )}
-          </div>
 
-          {bidHistory.length > 0 && (
-            <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-4">
-              <p className="text-white/40 text-xs uppercase tracking-wider mb-3">Bid History</p>
-              <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                {bidHistory.map((b, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-white/40">{b.teamName}</span>
-                    <span className="text-white/60 font-medium">{b.amount} pts</span>
+              {/* Bid history */}
+              {bidHistory.length > 0 && (
+                <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-4 lg:p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">📊</span>
+                    <p className="text-white/60 text-sm font-semibold uppercase tracking-wider">Bid History</p>
+                    <span className="ml-auto text-white/30 text-xs">{bidHistory.length} bids</span>
                   </div>
-                ))}
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {bidHistory.map((b, i) => (
+                      <div 
+                        key={i} 
+                        className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#0a1628]/50 border border-[#c9a227]/5 hover:border-[#c9a227]/15 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/20 text-xs font-mono">#{bidHistory.length - i}</span>
+                          <span className="text-white/60 text-sm">{b.teamName}</span>
+                        </div>
+                        <span className="text-[#c9a227] font-bold text-sm tabular-nums">{b.amount} pts</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[500px]">
+              <div className="w-20 h-20 rounded-full bg-[#c9a227]/5 flex items-center justify-center mb-4">
+                <span className="text-4xl">⏳</span>
               </div>
+              <p className="text-white/60 text-lg font-semibold mb-2">Waiting for Auction</p>
+              <p className="text-white/30 text-sm">The next player will appear here shortly</p>
             </div>
           )}
         </div>

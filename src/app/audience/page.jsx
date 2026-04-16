@@ -79,77 +79,115 @@ export default function AudiencePage() {
         {/* Auction Tab */}
         {tab === 'auction' && (
           <>
-            {/* Player card — full height like admin */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col overflow-hidden flex-1">
-                {activeSession && activePlayer ? (
-                  <div className="flex flex-col h-full">
-                    {/* Full bleed image */}
-                    <div className="relative overflow-hidden bg-[#0a1628]" style={{ minHeight: '280px', flex: 1 }}>
-                      {activePlayer.photo ? (
-                        <>
-                          <img src={activePlayer.photo} alt={activePlayer.name}
-                            className="absolute inset-0 w-full h-full object-cover object-top" />
-                          <img src={activePlayer.photo} alt=""
-                            className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60" />
-                        </>
-                      ) : (
-                        <div className="absolute inset-0 bg-[#0d1e3a]" />
-                      )}
-                      <div className="absolute inset-0 bg-linear-to-t from-[#0a1628] via-[#0a1628]/30 to-transparent" />
-
-                      {/* Name overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 px-6 pb-5 pt-3">
-                        <div className="absolute left-0 right-0 top-0 h-px bg-[#c9a227]/20" />
-                        <p className="text-[#c9a227]/60 text-xs uppercase tracking-widest mb-1.5">{activePlayer.skills?.[0]}</p>
-                        <h2 className="text-3xl lg:text-4xl font-black text-white uppercase tracking-tight leading-none mb-3">
-                          {activePlayer.name}
-                        </h2>
-                        <div className="flex flex-wrap gap-1.5">
-                          {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+            {activeSession && activePlayer ? (
+              <>
+                {/* Main player card */}
+                <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                  {/* Player photo section */}
+                  <div className="relative h-64 lg:h-80 overflow-hidden bg-gradient-to-br from-[#0a1628] to-[#0d1e3a]">
+                    {activePlayer.photo ? (
+                      <>
+                        <img src={activePlayer.photo} alt={activePlayer.name}
+                          className="absolute inset-0 w-full h-full object-cover object-top" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1e3a] via-[#0d1e3a]/60 to-transparent" />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-32 h-32 rounded-full bg-[#c9a227]/10 flex items-center justify-center">
+                          <span className="text-6xl text-[#c9a227]/30">👤</span>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Bid strip */}
-                    <div className="border-t border-[#c9a227]/15 px-6 py-5 shrink-0">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-[#c9a227]/50 text-xs uppercase tracking-widest">Current Bid</p>
-                          <div className="flex items-baseline gap-2 mt-1">
-                            <span className="text-5xl font-black text-[#c9a227] tabular-nums">{activeSession.currentBid}</span>
-                            <span className="text-white/30 text-base">pts</span>
+                    )}
+                    
+                    {/* Player info overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-5 lg:p-6">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#c9a227] text-xs uppercase tracking-[0.15em] font-semibold mb-2 opacity-80">
+                            {activePlayer.skills?.[0] || 'Player'}
+                          </p>
+                          <h1 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tight leading-none mb-3">
+                            {activePlayer.name}
+                          </h1>
+                          <div className="flex flex-wrap gap-1.5">
+                            {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-white/30 text-xs uppercase tracking-widest">Leading</p>
-                          <p className="text-white/60 text-base font-semibold mt-1">{activeSession.currentHighestBidderName || '—'}</p>
+                        <div className="bg-[#0a1628]/80 backdrop-blur-sm border border-[#c9a227]/20 rounded-lg px-3 py-2 text-center shrink-0">
+                          <p className="text-white/40 text-[10px] uppercase tracking-wider">Base</p>
+                          <p className="text-white font-bold text-sm">{activePlayer.basePrice}</p>
                         </div>
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-12">
-                    <p className="text-[#c9a227]/10 text-6xl mb-4">—</p>
-                    <p className="text-white/25 text-base">Waiting for next player</p>
-                    <p className="text-white/15 text-sm mt-1">Admin will start the auction shortly</p>
+
+                  {/* Current bid display */}
+                  <div className="p-5 lg:p-6 bg-[#0a1628]/50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white/40 text-xs uppercase tracking-[0.12em] mb-1.5">Current Bid</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl lg:text-5xl font-black text-[#c9a227] tabular-nums leading-none">
+                            {activeSession.currentBid}
+                          </span>
+                          <span className="text-white/30 text-base font-medium">pts</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white/40 text-xs uppercase tracking-[0.12em] mb-1.5">Leading</p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#c9a227]/15 border border-[#c9a227]/30">
+                          {activeSession.currentHighestBidderName && (
+                            <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />
+                          )}
+                          <span className="text-sm font-semibold text-[#c9a227]">
+                            {activeSession.currentHighestBidderName || 'No bids'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bid history */}
+                {bidHistory.length > 0 && (
+                  <div className="lg:w-80 bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-4 lg:p-5 flex flex-col max-h-[600px]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">📊</span>
+                      <p className="text-white/60 text-sm font-semibold uppercase tracking-wider">Bid History</p>
+                      <span className="ml-auto text-white/30 text-xs">{bidHistory.length} bids</span>
+                    </div>
+                    <div className="space-y-2 overflow-y-auto pr-1">
+                      {bidHistory.map((b, i) => (
+                        <div 
+                          key={i} 
+                          className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
+                            i === 0 
+                              ? 'bg-[#c9a227]/15 border border-[#c9a227]/30' 
+                              : 'bg-[#0a1628]/50 border border-[#c9a227]/5 hover:border-[#c9a227]/15'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-white/20 text-xs font-mono">#{bidHistory.length - i}</span>
+                            <span className={`text-sm ${i === 0 ? 'text-white font-semibold' : 'text-white/60'}`}>
+                              {b.teamName}
+                            </span>
+                          </div>
+                          <span className={`font-bold text-sm tabular-nums ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>
+                            {b.amount} pts
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Bid history sidebar */}
-            {bidHistory.length > 0 && (
-              <div className="lg:w-72 bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl p-5 flex flex-col">
-                <p className="text-[#c9a227]/50 text-xs uppercase tracking-widest mb-4">Bid History</p>
-                <div className="flex-1 overflow-y-auto space-y-2">
-                  {bidHistory.map((b, i) => (
-                    <div key={i} className={`flex items-center justify-between py-2.5 px-3 rounded-lg ${i === 0 ? 'bg-[#c9a227]/10 border border-[#c9a227]/20' : 'bg-white/3'}`}>
-                      <span className={`text-sm font-medium ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>{b.teamName}</span>
-                      <span className={`text-sm font-bold ${i === 0 ? 'text-[#c9a227]' : 'text-white/40'}`}>{b.amount} pts</span>
-                    </div>
-                  ))}
+              </>
+            ) : (
+              <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[500px]">
+                <div className="w-20 h-20 rounded-full bg-[#c9a227]/5 flex items-center justify-center mb-4">
+                  <span className="text-4xl">⏳</span>
                 </div>
+                <p className="text-white/60 text-lg font-semibold mb-2">Waiting for Auction</p>
+                <p className="text-white/30 text-sm">The next player will appear here shortly</p>
               </div>
             )}
           </>
