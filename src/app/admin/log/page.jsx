@@ -3,13 +3,6 @@ import { useEffect, useState } from 'react';
 import { useApi } from '@/hooks/useApi';
 import Spinner from '@/components/Spinner';
 
-const ACTION_STYLES = {
-  bid: 'bg-blue-900/40 text-blue-300 border-blue-800',
-  sold: 'bg-amber-900/40 text-amber-300 border-amber-800',
-  unsold: 'bg-red-900/40 text-red-300 border-red-800',
-  resale_triggered: 'bg-purple-900/40 text-purple-300 border-purple-800',
-};
-
 export default function AuctionLogPage() {
   const { request } = useApi();
   const [logs, setLogs] = useState([]);
@@ -17,46 +10,74 @@ export default function AuctionLogPage() {
 
   useEffect(() => {
     const load = async () => {
-      const res = await request('/api/auction/log');
+      const res = await request('/api/auction/log?pageSize=500');
       if (res) setLogs(res.logs || []);
       setLoading(false);
     };
     load();
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
-
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-white mb-6">Auction Log</h1>
-      <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wider">
-              <th className="text-left px-4 py-3">Time</th>
-              <th className="text-left px-4 py-3">Action</th>
-              <th className="text-left px-4 py-3">Player</th>
-              <th className="text-left px-4 py-3">Team</th>
-              <th className="text-left px-4 py-3">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map(log => (
-              <tr key={log._id} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
-                <td className="px-4 py-3 text-slate-500 text-xs">{new Date(log.timestamp).toLocaleTimeString()}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded border font-medium capitalize ${ACTION_STYLES[log.action] || 'bg-slate-700 text-slate-300 border-slate-600'}`}>
-                    {log.action?.replace('_', ' ')}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-white font-medium">{log.playerId?.name || '—'}</td>
-                <td className="px-4 py-3 text-slate-300">{log.teamId?.name || '—'}</td>
-                <td className="px-4 py-3 text-amber-400 font-medium">{log.amount ? `${log.amount} pts` : '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {logs.length === 0 && <p className="text-center text-slate-500 py-8">No auction activity yet</p>}
+    <div className="flex flex-col min-h-screen lg:h-[calc(100vh-48px)]">
+      <div className="px-4 lg:px-6 py-4 border-b border-[#c9a227]/15 shrink-0">
+        <h1 className="text-base font-semibold text-white">Auction Log</h1>
+        <p className="text-white/40 text-xs mt-0.5">{logs.length} entries</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex items-center justify-center h-40"><Spinner size="lg" /></div>
+        ) : (
+          <>
+            {/* Mobile list */}
+            <div className="lg:hidden divide-y divide-[#c9a227]/10">
+              {logs.map(log => (
+                <div key={log._id} className="px-4 py-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[#c9a227]/60 text-xs uppercase tracking-wider">{log.action?.replace('_', ' ')}</span>
+                    </div>
+                    <div className="text-white/70 text-sm truncate">{log.playerId?.name || '—'}</div>
+                    <div className="text-white/30 text-xs">{log.teamId?.name || '—'}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[#c9a227] text-sm font-semibold">{log.amount ? `${log.amount}pts` : '—'}</div>
+                    <div className="text-white/25 text-xs">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-sm min-w-[500px]">
+                <thead className="sticky top-0 bg-[#0a1628] z-10">
+                  <tr className="border-b border-[#c9a227]/15">
+                    <th className="text-left px-6 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Time</th>
+                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Action</th>
+                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Player</th>
+                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Team</th>
+                    <th className="text-left px-6 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map(log => (
+                    <tr key={log._id} className="border-b border-[#c9a227]/8 hover:bg-[#c9a227]/5 transition-colors">
+                      <td className="px-6 py-3 text-white/25 text-xs tabular-nums">
+                        {new Date(log.timestamp).toLocaleDateString()} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-4 py-3"><span className="text-xs text-[#c9a227]/60 uppercase tracking-wider">{log.action?.replace('_', ' ')}</span></td>
+                      <td className="px-4 py-3 text-white/70">{log.playerId?.name || '—'}</td>
+                      <td className="px-4 py-3 text-white/40">{log.teamId?.name || '—'}</td>
+                      <td className="px-6 py-3 text-[#c9a227]/80 tabular-nums">{log.amount ? `${log.amount} pts` : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+        {!loading && logs.length === 0 && <p className="text-center text-white/30 py-16 text-sm">No activity yet</p>}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import Logo from '@/components/Logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,7 +26,6 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) { toast(data.error || 'Login failed', 'error'); return; }
       login(data.token, data.user);
-      toast('Welcome back!', 'success');
       router.push(data.user.role === 'admin' ? '/admin' : '/captain');
     } catch {
       toast('Network error', 'error');
@@ -35,51 +35,104 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-4">🏏</div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">NIT Sports Auction</h1>
-          <p className="text-slate-400 mt-2">Inter-College Sports Event Platform</p>
+    <div className="min-h-screen bg-[#0a1628] flex flex-col lg:flex-row">
+
+      {/* Left branding panel — desktop only */}
+      <div className="hidden lg:flex flex-col w-[45%] bg-[#0d1e3a] border-r border-[#c9a227]/20 p-10 relative overflow-hidden">
+        <img src="/NPL.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none" />
+        <div className="absolute inset-0 bg-[#0d1e3a]/50 pointer-events-none" />
+
+        {/* Top */}
+        <div className="relative flex items-center gap-3 mb-auto">
+          <Logo size="md" className="rounded-xl" />
+          <div>
+            <div className="text-[#c9a227] font-bold tracking-widest text-sm uppercase">NIT Sports Auction</div>
+            <div className="text-white/40 text-xs">Inter-College Sports Event</div>
+          </div>
         </div>
-        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-700 rounded-2xl p-8 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              placeholder="admin@nit.com"
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-            />
+
+        {/* Center */}
+        <div className="relative my-auto">
+          <div className="text-[#c9a227] text-5xl font-black uppercase leading-tight tracking-tight mb-4">
+            LIVE<br/>AUCTION
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-            />
+          <p className="text-white/50 text-sm leading-relaxed mb-6 max-w-xs">
+            Real-time player bidding for NIT's inter-college sports championship.
+          </p>
+          <div className="flex gap-6">
+            {[['8','Teams'],['56','Players'],['1000','Points']].map(([val, label]) => (
+              <div key={label}>
+                <div className="text-[#c9a227] text-2xl font-bold">{val}</div>
+                <div className="text-white/30 text-xs uppercase tracking-wider mt-0.5">{label}</div>
+              </div>
+            ))}
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            {loading ? <Spinner size="sm" /> : 'Sign In'}
-          </button>
-        </form>
-        <p className="text-center text-slate-500 text-xs mt-6">
-          Admin: admin@nit.com / admin123 &nbsp;|&nbsp; Captains: captain1@nit.com / captain1
-        </p>
-        <div className="text-center mt-3">
-          <a href="/audience" className="text-blue-400 hover:text-blue-300 text-xs underline">
-            👁 Watch Live Auction (Audience View)
+        </div>
+
+        {/* Bottom */}
+        <div className="relative mt-auto">
+          <a href="/audience" className="inline-flex items-center gap-2 text-[#c9a227]/40 hover:text-[#c9a227] text-sm transition-colors">
+            Watch live →
           </a>
+        </div>
+      </div>
+
+      {/* Right form panel */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
+        {/* Background image — visible on all screens */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img src="/NPL.png" alt="" className="w-full h-full object-cover opacity-[0.07]" />
+          <div className="absolute inset-0 bg-[#0a1628]/70" />
+        </div>
+
+        {/* Mobile logo */}
+        <div className="lg:hidden flex flex-col items-center mb-8 relative z-10">
+          <Logo size="lg" className="rounded-2xl mb-3" />
+          <div className="text-white font-bold text-lg">NIT Sports Auction</div>
+          <div className="text-white/30 text-xs mt-0.5">Inter-College Sports Event</div>
+        </div>
+
+        <div className="w-full max-w-sm relative z-10">
+          <div className="mb-7">
+            <h2 className="text-2xl font-bold text-white">Sign in</h2>
+            <p className="text-white/30 text-sm mt-1">Enter your credentials to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#c9a227]/60 uppercase tracking-widest mb-2">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                placeholder="admin@nit.com" suppressHydrationWarning
+                className="w-full bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl px-4 py-3 text-white text-sm placeholder-white/15 focus:outline-none focus:border-[#c9a227]/50 transition-colors" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#c9a227]/60 uppercase tracking-widest mb-2">Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                placeholder="••••••••" suppressHydrationWarning
+                className="w-full bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl px-4 py-3 text-white text-sm placeholder-white/15 focus:outline-none focus:border-[#c9a227]/50 transition-colors" />
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full bg-[#c9a227] hover:bg-[#f0c040] text-[#0a1628] font-bold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-40 flex items-center justify-center gap-2 mt-1">
+              {loading ? <Spinner size="sm" /> : 'Sign In'}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-5 border-t border-[#c9a227]/10 space-y-2">
+            <p className="text-white/20 text-xs mb-2">Demo credentials</p>
+            <div className="flex items-center justify-between bg-[#0d1e3a] border border-[#c9a227]/10 rounded-lg px-3 py-2">
+              <span className="text-white/30 text-xs">Admin</span>
+              <span className="text-white/40 text-xs font-mono">admin@nit.com / admin123</span>
+            </div>
+            <div className="flex items-center justify-between bg-[#0d1e3a] border border-[#c9a227]/10 rounded-lg px-3 py-2">
+              <span className="text-white/30 text-xs">Captain</span>
+              <span className="text-white/40 text-xs font-mono">captain1@nit.com / captain1</span>
+            </div>
+            <div className="text-center pt-1">
+              <a href="/audience" className="text-[#c9a227]/30 hover:text-[#c9a227] text-xs transition-colors">
+                Watch live auction →
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

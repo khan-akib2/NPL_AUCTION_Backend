@@ -1,5 +1,7 @@
 import { connectDB } from '@/lib/mongodb';
 import AuctionSession from '@/lib/models/AuctionSession';
+import Player from '@/lib/models/Player';
+import Team from '@/lib/models/Team';
 
 export async function GET() {
   try {

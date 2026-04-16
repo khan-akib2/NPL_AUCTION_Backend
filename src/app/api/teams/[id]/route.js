@@ -1,5 +1,6 @@
 import { connectDB } from '@/lib/mongodb';
 import Team from '@/lib/models/Team';
+import User from '@/lib/models/User';
 import { verifyToken, getTokenFromRequest } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
@@ -14,6 +15,23 @@ export async function PUT(request, { params }) {
     const team = await Team.findByIdAndUpdate(id, body, { new: true });
     if (!team) return Response.json({ error: 'Team not found' }, { status: 404 });
     return Response.json({ team });
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request, { params }) {
+  try {
+    const token = getTokenFromRequest(request);
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+    await connectDB();
+    const { id } = await params;
+    await Team.findByIdAndDelete(id);
+    // Unlink captain
+    await User.updateMany({ teamId: id }, { teamId: null });
+    return Response.json({ success: true });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }

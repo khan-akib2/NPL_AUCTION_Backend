@@ -15,16 +15,16 @@ export default function AdminLayout({ children }) {
   }, [user, loading, router]);
 
   if (loading || !user) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950">
+    <div className="min-h-screen flex items-center justify-center bg-[#0a1628]">
       <Spinner size="lg" />
     </div>
   );
 
   return (
     <SocketProvider>
-      <div className="flex min-h-screen bg-slate-950">
+      <div className="flex min-h-screen bg-[#0a1628]">
         <AdminSidebar />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-hidden pt-12 lg:pt-0 min-w-0 overflow-y-auto">{children}</main>
       </div>
     </SocketProvider>
   );

@@ -19,10 +19,11 @@ export default function AuctionControl() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [teams, setTeams] = useState([]);
+  const [mobileTab, setMobileTab] = useState('auction');
 
   const loadData = useCallback(async () => {
     const [pRes, sRes, tRes] = await Promise.all([
-      request('/api/players'),
+      request('/api/players?pageSize=100'),
       request('/api/auction/active'),
       request('/api/teams'),
     ]);
@@ -31,7 +32,7 @@ export default function AuctionControl() {
     if (sRes?.session) {
       setActiveSession(sRes.session);
       setActivePlayer(sRes.session.playerId);
-      setBidHistory(sRes.session.bids || []);
+      setBidHistory(sRes.session.bids?.slice().reverse() || []);
     }
     setLoading(false);
   }, []);
@@ -41,22 +42,20 @@ export default function AuctionControl() {
   useEffect(() => {
     if (!socket) return;
     socket.on('auction:start', ({ session, player }) => {
-      setActiveSession(session);
-      setActivePlayer(player);
-      setBidHistory([]);
-      toast(`Auction started for ${player.name}`, 'info');
+      setActiveSession(session); setActivePlayer(player); setBidHistory([]);
+      setMobileTab('auction');
     });
     socket.on('auction:bid_update', (data) => {
       setActiveSession(prev => prev ? { ...prev, currentBid: data.currentBid, currentHighestBidderName: data.bidderTeamName } : prev);
-      setBidHistory(prev => [{ teamName: data.bidderTeamName, amount: data.currentBid, timestamp: new Date() }, ...prev]);
+      setBidHistory(prev => [{ teamName: data.bidderTeamName, amount: data.currentBid }, ...prev]);
     });
     socket.on('auction:sold', ({ player, team }) => {
-      toast(`${player.name} sold to ${team.name} for ${player.soldPrice} pts!`, 'success');
+      toast(`${player.name} → ${team.name}`, 'success');
       setActiveSession(null); setActivePlayer(null); setBidHistory([]);
       loadData();
     });
     socket.on('auction:unsold', ({ player }) => {
-      toast(`${player.name} marked unsold`, 'warning');
+      toast(`${player.name} unsold`, 'info');
       setActiveSession(null); setActivePlayer(null); setBidHistory([]);
       loadData();
     });
@@ -69,7 +68,7 @@ export default function AuctionControl() {
     const res = await request('/api/auction/start', { method: 'POST', body: JSON.stringify({ playerId: selectedPlayer._id }) });
     setActionLoading(false);
     if (res?.error) toast(res.error, 'error');
-    else { setActiveSession(res.session); setActivePlayer(res.player); setBidHistory([]); }
+    else { setActiveSession(res.session); setActivePlayer(res.player); setBidHistory([]); setMobileTab('auction'); }
   };
 
   const markSold = async () => {
@@ -96,133 +95,183 @@ export default function AuctionControl() {
     else { toast('Resale triggered', 'success'); loadData(); }
   };
 
-  const availablePlayers = players.filter(p => ['available', 'resold'].includes(p.status));
+  const available = players.filter(p => ['available','resold'].includes(p.status));
+  const resaleTeams = teams.filter(t => t.budget < 50 && t.playerCount < 7);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
 
   return (
-    <div className="p-6 h-full">
-      <h1 className="text-2xl font-bold text-white mb-6">Auction Control</h1>
-      <div className="grid grid-cols-12 gap-6 h-full">
-
-        {/* Left: Player Queue */}
-        <div className="col-span-3 bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col">
-          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Player Queue ({availablePlayers.length})</h2>
-          <div className="flex-1 overflow-y-auto space-y-2">
-            {availablePlayers.map(p => (
-              <button
-                key={p._id}
-                onClick={() => setSelectedPlayer(p)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  selectedPlayer?._id === p._id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                <div className="font-medium">{p.name}</div>
-                <div className="text-xs opacity-70 mt-0.5">{p.skills?.join(', ')} · Base: {p.basePrice}pts</div>
-                {p.status === 'resold' && <span className="text-xs text-amber-400">↩ Resold</span>}
-              </button>
-            ))}
-            {availablePlayers.length === 0 && <p className="text-slate-500 text-sm text-center py-8">No players available</p>}
-          </div>
-          <button
-            onClick={startBidding}
-            disabled={!selectedPlayer || !!activeSession || actionLoading}
-            className="mt-4 w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
-          >
-            {actionLoading ? <Spinner size="sm" /> : '▶ Start Bidding'}
-          </button>
-        </div>
-
-        {/* Center: Active Auction */}
-        <div className="col-span-6 bg-slate-900 border border-slate-700 rounded-xl p-6 flex flex-col">
-          {activeSession && activePlayer ? (
-            <>
-              <div className="flex items-start gap-6 mb-6">
-                <div className="w-24 h-24 bg-slate-700 rounded-xl flex items-center justify-center text-4xl shrink-0">
-                  {activePlayer.photo ? <img src={activePlayer.photo} alt={activePlayer.name} className="w-full h-full object-cover rounded-xl" /> : '👤'}
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white">{activePlayer.name}</h2>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
-                  </div>
-                  <div className="text-slate-400 text-sm mt-2">Base Price: <span className="text-white font-medium">{activePlayer.basePrice} pts</span></div>
-                </div>
-              </div>
-
-              <div className="bg-slate-800 rounded-xl p-6 text-center mb-6 pulse-glow">
-                <div className="text-slate-400 text-sm uppercase tracking-wider mb-1">Current Bid</div>
-                <div className="text-5xl font-bold text-amber-400">{activeSession.currentBid}</div>
-                <div className="text-slate-300 text-sm mt-2">
-                  {activeSession.currentHighestBidderName
-                    ? <>Highest: <span className="text-blue-400 font-semibold">{activeSession.currentHighestBidderName}</span></>
-                    : <span className="text-slate-500">No bids yet</span>}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={markSold}
-                  disabled={!activeSession.currentHighestBidder || actionLoading}
-                  className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black font-bold py-3 rounded-lg transition-colors"
-                >
-                  🏆 SOLD
-                </button>
-                <button
-                  onClick={markUnsold}
-                  disabled={actionLoading}
-                  className="flex-1 bg-red-800 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors"
-                >
-                  ✗ UNSOLD
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <div className="text-6xl mb-4">🏏</div>
-              <h2 className="text-xl font-semibold text-slate-300">No Active Auction</h2>
-              <p className="text-slate-500 mt-2 text-sm">Select a player from the queue and click Start Bidding</p>
-            </div>
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 48px)' }}>
+      {/* Header + tabs */}
+      <div className="shrink-0 px-4 lg:px-6 pt-4 pb-3">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-lg font-semibold text-white">Auction Control</h1>
+          {activeSession && (
+            <span className="flex items-center gap-1.5 text-xs text-white/40 bg-[#c9a227]/8 border border-[#c9a227]/20 px-3 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              Live
+            </span>
           )}
         </div>
+        <div className="flex lg:hidden border border-[#c9a227]/20 rounded-lg overflow-hidden">
+          {['queue','auction','bids'].map(t => (
+            <button key={t} onClick={() => setMobileTab(t)}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${mobileTab === t ? 'bg-[#c9a227]/15 text-white' : 'text-white/30'}`}>
+              {t === 'queue' ? 'Queue' : t === 'auction' ? 'Auction' : 'Bids'}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {/* Right: Bid History + Resale */}
-        <div className="col-span-3 flex flex-col gap-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex-1 flex flex-col">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Live Bids</h2>
-            <div className="flex-1 overflow-y-auto space-y-2">
-              {bidHistory.length === 0 && <p className="text-slate-500 text-sm text-center py-4">No bids yet</p>}
-              {bidHistory.map((b, i) => (
-                <div key={i} className="bg-slate-800 rounded-lg px-3 py-2 text-sm">
-                  <div className="text-blue-400 font-medium">{b.teamName}</div>
-                  <div className="text-amber-400 font-bold">{b.amount} pts</div>
-                </div>
+      {/* 3-column grid — fills rest of screen */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 px-4 lg:px-6 pb-4 lg:pb-6 overflow-hidden">
+
+        {/* Queue */}
+        <div className={`lg:col-span-3 flex flex-col min-h-0 ${mobileTab !== 'queue' ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl flex flex-col h-full overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#c9a227]/15 flex items-center justify-between shrink-0">
+              <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Queue</span>
+              <span className="text-xs text-white/30">{available.length} players</span>
+            </div>            <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
+              {available.map(p => (
+                <button key={p._id} onClick={() => setSelectedPlayer(p)}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    selectedPlayer?._id === p._id
+                      ? 'bg-[#c9a227]/15 text-white'
+                      : 'text-white/50 hover:bg-[#c9a227]/8 hover:text-white/80'
+                  }`}>
+                  <div className="font-medium text-sm">{p.name}</div>
+                  <div className="text-xs text-white/40 mt-0.5">{p.skills?.join(' · ')} · {p.basePrice}pts</div>
+                  {p.status === 'resold' && <span className="text-[10px] text-white/40 uppercase tracking-wider">Resold</span>}
+                </button>
               ))}
+              {available.length === 0 && <p className="text-white/30 text-xs text-center py-8">No players available</p>}
+            </div>
+            <div className="p-3 border-t border-[#c9a227]/15 shrink-0">
+              <button onClick={startBidding} disabled={!selectedPlayer || !!activeSession || actionLoading}
+                className="w-full bg-[#c9a227] text-[#0a1628] font-semibold py-2.5 rounded-lg text-sm transition-opacity hover:bg-[#f0c040] disabled:opacity-20 flex items-center justify-center gap-2">
+                {actionLoading ? <Spinner size="sm" /> : 'Start Bidding'}
+              </button>
             </div>
           </div>
+        </div>
 
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Trigger Resale</h2>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {teams.filter(t => t.budget < 50 && t.playerCount < 7).map(t => (
-                <div key={t._id} className="flex items-center justify-between bg-slate-800 rounded-lg px-3 py-2">
-                  <div>
-                    <div className="text-sm text-white font-medium">{t.name}</div>
-                    <div className="text-xs text-slate-400">{t.budget} pts left</div>
+        {/* Active Auction */}
+        <div className={`lg:col-span-6 flex flex-col min-h-0 ${mobileTab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl flex flex-col h-full overflow-hidden">
+            {activeSession && activePlayer ? (
+              <div className="flex flex-col h-full">
+
+                {/* Player Card */}
+                <div className="relative overflow-hidden bg-[#0a1628]" style={{ minHeight: '280px', flex: 1 }}>
+                  {activePlayer.photo ? (
+                    <>
+                      <img src={activePlayer.photo} alt={activePlayer.name}
+                        className="absolute inset-0 w-full h-full object-cover object-top" />
+                      <img src={activePlayer.photo} alt=""
+                        className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60" />
+                    </>
+                  ) : (
+                    /* Solid dark bg — no NPL bleed-through */
+                    <div className="absolute inset-0 bg-[#0d1e3a]" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628] via-[#0a1628]/30 to-transparent" />
+
+                  {/* Name overlay at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-3">
+                    <div className="absolute left-0 right-0 top-0 h-px bg-[#c9a227]/20" />
+                    <p className="text-[#c9a227]/60 text-xs uppercase tracking-widest mb-1.5">
+                      {activePlayer.skills?.[0]}
+                    </p>
+                    <h2 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tight leading-none mb-3">
+                      {activePlayer.name}
+                    </h2>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => triggerResale(t._id)}
-                    className="text-xs bg-orange-700 hover:bg-orange-600 text-white px-2 py-1 rounded transition-colors"
-                  >
-                    Resale
-                  </button>
+                </div>
+
+                {/* Bid strip */}
+                <div className="border-t border-[#c9a227]/15 px-5 py-4 shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-white/40 text-xs uppercase tracking-widest">Current Bid</p>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="text-4xl font-black text-[#c9a227] tabular-nums">{activeSession.currentBid}</span>
+                        <span className="text-white/40 text-sm">pts</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white/40 text-xs uppercase tracking-widest">Base Price</p>
+                      <p className="text-white/50 text-lg font-semibold mt-0.5">{activePlayer.basePrice} pts</p>
+                    </div>
+                  </div>
+
+                  {activeSession.currentHighestBidderName && (
+                    <p className="text-white/40 text-xs mb-3 border-l-2 border-[#c9a227]/20 pl-2">
+                      Leading — {activeSession.currentHighestBidderName}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={markSold} disabled={!activeSession.currentHighestBidder || actionLoading}
+                      className="bg-[#c9a227] text-[#0a1628] font-bold py-2.5 rounded-lg text-sm transition-opacity hover:bg-[#f0c040] disabled:opacity-20 flex items-center justify-center gap-1.5">
+                      {actionLoading ? <Spinner size="sm" /> : 'Mark Sold'}
+                    </button>
+                    <button onClick={markUnsold} disabled={actionLoading}
+                      className="bg-[#c9a227]/8 border border-[#c9a227]/20 text-white/50 font-medium py-2.5 rounded-lg text-sm transition-colors hover:bg-[#c9a227]/15 hover:text-white">
+                      Mark Unsold
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                <p className="text-white/20 text-4xl mb-3">—</p>
+                <p className="text-white/40 text-sm">No active auction</p>
+                <p className="text-white/20 text-xs mt-1">Select a player and start bidding</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bids + Resale */}
+        <div className={`lg:col-span-3 flex flex-col gap-3 min-h-0 ${mobileTab !== 'bids' ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl flex flex-col flex-1 overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#c9a227]/15 shrink-0">
+              <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Bid Feed</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0">
+              {bidHistory.length === 0 && <p className="text-white/30 text-xs text-center py-6">No bids yet</p>}
+              {bidHistory.map((b, i) => (
+                <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${i === 0 ? 'bg-[#c9a227]/12 border border-[#c9a227]/20' : 'bg-[#c9a227]/5'}`}>
+                  <span className="text-white/60 truncate mr-2">{b.teamName}</span>
+                  <span className="text-white font-semibold shrink-0">{b.amount}</span>
                 </div>
               ))}
-              {teams.filter(t => t.budget < 50 && t.playerCount < 7).length === 0 && (
-                <p className="text-slate-500 text-xs text-center py-2">No teams need resale</p>
-              )}
             </div>
           </div>
+
+          {resaleTeams.length > 0 && (
+            <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-3">
+              <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Resale</p>
+              <div className="space-y-1.5">
+                {resaleTeams.map(t => (
+                  <div key={t._id} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-white/70">{t.name}</p>
+                      <p className="text-xs text-white/40">{t.budget} pts</p>
+                    </div>
+                    <button onClick={() => triggerResale(t._id)}
+                      className="text-xs bg-[#c9a227]/8 border border-[#c9a227]/20 text-white/50 hover:text-white px-3 py-1.5 rounded-lg transition-colors">
+                      Trigger
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

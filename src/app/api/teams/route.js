@@ -1,5 +1,7 @@
 import { connectDB } from '@/lib/mongodb';
 import Team from '@/lib/models/Team';
+import Player from '@/lib/models/Player';
+import User from '@/lib/models/User';
 import { verifyToken, getTokenFromRequest } from '@/lib/auth';
 
 export async function GET(request) {

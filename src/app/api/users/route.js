@@ -1,6 +1,4 @@
 import { connectDB } from '@/lib/mongodb';
-import Team from '@/lib/models/Team';
-import Player from '@/lib/models/Player';
 import User from '@/lib/models/User';
 import { verifyToken, getTokenFromRequest } from '@/lib/auth';
 
@@ -11,8 +9,8 @@ export async function GET(request) {
     if (!decoded || decoded.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     await connectDB();
-    const teams = await Team.find().populate({ path: 'players', populate: { path: 'soldTo', select: 'name' } }).populate('captainId', 'name email');
-    return Response.json({ teams });
+    const users = await User.find({ role: 'captain' }).select('-passwordHash').sort({ name: 1 });
+    return Response.json({ users });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }

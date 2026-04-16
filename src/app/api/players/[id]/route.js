@@ -1,5 +1,6 @@
 import { connectDB } from '@/lib/mongodb';
 import Player from '@/lib/models/Player';
+import AuctionSession from '@/lib/models/AuctionSession';
 import { verifyToken, getTokenFromRequest } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
@@ -27,6 +28,13 @@ export async function DELETE(request, { params }) {
 
     await connectDB();
     const { id } = await params;
+
+    // Close any active auction session for this player
+    await AuctionSession.updateMany(
+      { playerId: id, status: 'active' },
+      { status: 'closed', endedAt: new Date() }
+    );
+
     await Player.findByIdAndDelete(id);
     return Response.json({ success: true });
   } catch (e) {
