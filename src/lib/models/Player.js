@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import './Team.js';
 
 const PlayerSchema = new mongoose.Schema({
   name: { type: String, required: true },

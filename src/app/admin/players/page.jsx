@@ -49,6 +49,7 @@ export default function PlayersPage() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
@@ -62,7 +63,9 @@ export default function PlayersPage() {
   };
   useEffect(() => { load(); }, []);
 
-  const filtered = filter === 'all' ? players : players.filter(p => p.status === filter);
+  const filtered = players
+    .filter(p => filter === 'all' || p.status === filter)
+    .filter(p => !search.trim() || p.name.toLowerCase().includes(search.trim().toLowerCase()));
   const toggleSkill = s => setForm(f => ({ ...f, skills: f.skills.includes(s) ? f.skills.filter(x => x !== s) : [...f.skills, s] }));
 
   const handleSave = async () => {
@@ -102,6 +105,15 @@ export default function PlayersPage() {
 
       {/* Filters — horizontal scroll on mobile */}
       <div className="flex gap-2 px-4 lg:px-6 py-3 border-b border-[#c9a227]/15 shrink-0 overflow-x-auto">
+        <div className="relative shrink-0">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search players..."
+            className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg pl-7 pr-3 py-1.5 text-white text-xs focus:outline-none focus:border-[#c9a227]/40 placeholder-white/20 w-40"
+          />
+        </div>
         {['all','available','sold','unsold','resold'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors whitespace-nowrap ${filter === f ? 'bg-[#c9a227]/15 text-[#c9a227] border border-[#c9a227]/20' : 'text-white/30 hover:text-white/60 bg-[#0d1e3a] border border-[#c9a227]/10'}`}>
