@@ -5,7 +5,11 @@ import { ToastProvider } from "@/components/Toast";
 export const metadata = {
   title: "NIT Sports Auction",
   description: "NIT Inter-College Sports Auction Platform",
-  icons: { icon: '/NPL.png' },
+  icons: {
+    icon: '/NPL.png',
+    shortcut: '/NPL.png',
+    apple: '/NPL.png',
+  },
 };
 
 export const viewport = {
