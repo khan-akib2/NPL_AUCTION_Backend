@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
@@ -11,11 +11,12 @@ const emptyForm = { name: '', photo: '', skills: [], basePrice: 50 };
 
 function PhotoUpload({ value, onChange, token }) {
   const [uploading, setUploading] = useState(false);
-  const inputRef = useRef(null);
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = '';
     setUploading(true);
     const fd = new FormData();
     fd.append('file', file);
@@ -29,14 +30,14 @@ function PhotoUpload({ value, onChange, token }) {
       {value && (
         <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#c9a227]/20">
           <img src={value} alt="preview" className="w-full h-full object-cover" />
-          <button onClick={() => onChange('')} className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-white/60 hover:text-white text-xs flex items-center justify-center">✕</button>
+          <button type="button" onClick={() => onChange('')} className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-white/60 hover:text-white text-xs flex items-center justify-center">✕</button>
         </div>
       )}
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-      <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-        className="flex items-center gap-2 bg-[#c9a227]/8 border border-[#c9a227]/20 hover:bg-[#c9a227]/12 text-white/50 hover:text-white text-sm px-4 py-2.5 rounded-lg transition-colors disabled:opacity-40 w-full justify-center">
+      {/* Use a label wrapping the input — works reliably on iOS/Android without JS click() */}
+      <label className={`relative flex items-center justify-center gap-2 bg-[#c9a227]/8 border border-[#c9a227]/20 hover:bg-[#c9a227]/12 text-white/50 hover:text-white text-sm px-4 py-2.5 rounded-lg transition-colors w-full cursor-pointer ${uploading ? 'opacity-40 pointer-events-none' : ''}`}>
         {uploading ? <Spinner size="sm" /> : <>{value ? 'Change Photo' : 'Upload Photo'}</>}
-      </button>
+        <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFile} disabled={uploading} />
+      </label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder="or paste image URL"
         className="w-full bg-[#c9a227]/8 border border-[#c9a227]/20 rounded-lg px-3 py-2 text-white/50 text-xs focus:outline-none focus:border-white/20 transition-colors placeholder-white/20" />
     </div>
@@ -55,6 +56,7 @@ export default function PlayersPage() {
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -83,9 +85,10 @@ export default function PlayersPage() {
   };
 
   const handleEdit = p => { setForm({ name: p.name, photo: p.photo || '', skills: p.skills || [], basePrice: p.basePrice }); setEditId(p._id); setShowForm(true); };
-  const handleDelete = async id => {
-    if (!confirm('Delete this player?')) return;
-    const res = await request(`/api/players/${id}`, { method: 'DELETE' });
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    const res = await request(`/api/players/${deleteConfirm}`, { method: 'DELETE' });
+    setDeleteConfirm(null);
     if (res?.error) toast(res.error, 'error');
     else { toast('Deleted', 'success'); load(); }
   };
@@ -154,7 +157,7 @@ export default function PlayersPage() {
                       </div>
                       <div className="flex gap-3 shrink-0">
                         <button onClick={() => handleEdit(p)} className="text-white/30 hover:text-white text-xs">Edit</button>
-                        <button onClick={() => handleDelete(p._id)} className="text-white/20 hover:text-white/60 text-xs">Del</button>
+                        <button onClick={() => setDeleteConfirm(p._id)} className="text-white/20 hover:text-white/60 text-xs">Del</button>
                       </div>
                     </div>
                   ))}
@@ -185,7 +188,7 @@ export default function PlayersPage() {
                           <td className="px-4 py-3 text-white/50">{p.soldPrice || '—'}</td>
                           <td className="px-6 py-3 text-right space-x-4">
                             <button onClick={() => handleEdit(p)} className="text-white/30 hover:text-white text-xs">Edit</button>
-                            <button onClick={() => handleDelete(p._id)} className="text-white/20 hover:text-white/60 text-xs">Delete</button>
+                            <button onClick={() => setDeleteConfirm(p._id)} className="text-white/20 hover:text-white/60 text-xs">Delete</button>
                           </td>
                         </tr>
                       ))}
@@ -199,7 +202,7 @@ export default function PlayersPage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-t-2xl sm:rounded-2xl p-5 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
@@ -237,6 +240,26 @@ export default function PlayersPage() {
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 bg-[#c9a227] text-[#0a1628] font-bold py-2.5 rounded-lg text-sm hover:bg-[#f0c040] disabled:opacity-40 flex items-center justify-center gap-2">
                 {saving ? <Spinner size="sm" /> : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-6 w-full max-w-sm">
+            <h2 className="text-lg font-semibold text-white mb-2">Delete this player?</h2>
+            <p className="text-white/50 text-sm mb-6">This action cannot be undone. The player will be permanently removed from the system.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)}
+                className="flex-1 bg-[#0a1628] border border-[#c9a227]/15 text-white/50 py-2.5 rounded-lg text-sm hover:text-white transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmDelete}
+                className="flex-1 bg-red-600/90 text-white font-medium py-2.5 rounded-lg text-sm hover:bg-red-600 transition-colors">
+                Delete
               </button>
             </div>
           </div>
