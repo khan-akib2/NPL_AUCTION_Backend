@@ -42,6 +42,14 @@ export default function CaptainDashboard() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Poll every 3s as fallback when socket isn't connected
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (socket && !socket.connected) loadData();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [socket, loadData]);
+
   useEffect(() => {
     if (!socket) return;
     socket.on('auction:start', ({ session, player }) => {

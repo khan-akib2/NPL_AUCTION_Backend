@@ -79,10 +79,10 @@ export default function LoginPage() {
 
       {/* Right form panel */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
-        {/* Background image — visible on all screens */}
-        <div className="absolute inset-0 pointer-events-none">
+        {/* Background image — mobile only */}
+        <div className="lg:hidden absolute inset-0 pointer-events-none">
           <img src="/NPL.png" alt="" className="w-full h-full object-cover opacity-[0.07]" />
-          <div className="absolute inset-0 bg-[#0a1628]/70" />
+          <div className="absolute inset-0 bg-[#0a1628]/75" />
         </div>
 
         {/* Mobile logo */}

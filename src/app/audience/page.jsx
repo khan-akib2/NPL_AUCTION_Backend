@@ -26,7 +26,27 @@ export default function AudiencePage() {
         setBidHistory(d.session.bids?.slice().reverse() || []);
       }
     });
-  }, []);
+
+    // Poll every 3 seconds as fallback when socket isn't available
+    const interval = setInterval(async () => {
+      if (!connected) {
+        const [d] = await Promise.all([
+          fetch('/api/auction/active-public').then(r => r.json()),
+          fetchTeams(),
+        ]);
+        if (d.session) {
+          setActiveSession(d.session);
+          setActivePlayer(d.session.playerId);
+          setBidHistory(d.session.bids?.slice().reverse() || []);
+        } else {
+          setActiveSession(null);
+          setActivePlayer(null);
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [connected]);
 
   useEffect(() => {
     const s = io({ path: '/api/socket', transports: ['polling'] });
@@ -74,7 +94,7 @@ export default function AudiencePage() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 lg:p-8">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 lg:p-6" style={{ minHeight: 'calc(100vh - 100px)' }}>
 
         {/* Auction Tab */}
         {tab === 'auction' && (
