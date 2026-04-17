@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import cors from 'cors';
-
 import authRoutes from './routes/auth.js';
 import playerRoutes from './routes/players.js';
 import teamRoutes from './routes/teams.js';
