@@ -2,19 +2,24 @@ const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 const { Server } = require('socket.io');
-const dns = require('dns');
-
-// Force Node.js to use Google DNS to resolve MongoDB Atlas SRV records
-dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
 const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev });
+const hostname = process.env.HOSTNAME || '0.0.0.0';
+const port = parseInt(process.env.PORT || '3000', 10);
+
+const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  const httpServer = createServer((req, res) => {
-    const parsedUrl = parse(req.url, true);
-    handle(req, res, parsedUrl);
+  const httpServer = createServer(async (req, res) => {
+    try {
+      const parsedUrl = parse(req.url, true);
+      await handle(req, res, parsedUrl);
+    } catch (err) {
+      console.error('Error handling request:', err);
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+    }
   });
 
   const io = new Server(httpServer, {
@@ -23,7 +28,6 @@ app.prepare().then(() => {
     cors: { origin: '*', methods: ['GET', 'POST'] },
   });
 
-  // Store io globally so API routes can emit events
   global._io = io;
 
   io.on('connection', (socket) => {
@@ -31,8 +35,7 @@ app.prepare().then(() => {
     socket.on('disconnect', () => console.log('Client disconnected:', socket.id));
   });
 
-  const port = process.env.PORT || 3000;
-  httpServer.listen(port, () => {
-    console.log(`> Ready on http://localhost:${port}`);
+  httpServer.listen(port, hostname, () => {
+    console.log(`> Ready on http://${hostname}:${port}`);
   });
 });
