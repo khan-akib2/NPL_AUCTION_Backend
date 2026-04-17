@@ -114,66 +114,73 @@ export default function AudiencePage() {
           <>
             {activeSession && activePlayer ? (
               <>
-                {/* Main player card */}
-                <div className="flex-1 min-w-0 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg lg:rounded-2xl overflow-hidden shadow-2xl flex flex-col h-fit">
-                  {/* Player photo section */}
-                  <div className="relative h-56 sm:h-64 lg:h-72 overflow-hidden bg-gradient-to-br from-[#0a1628] to-[#0d1e3a]">
+                {/* HERO PLAYER CARD — same design as captain page */}
+                <div className="flex-1 min-w-0 flex flex-col gap-4">
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '420px', height: '55vh', maxHeight: '600px' }}>
                     {activePlayer.photo ? (
                       <>
+                        <img src={activePlayer.photo} alt=""
+                          className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 pointer-events-none" />
                         <img src={activePlayer.photo} alt={activePlayer.name}
-                          className="absolute inset-0 w-full h-full object-cover object-top" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1e3a] via-[#0d1e3a]/70 to-transparent" />
+                          className="absolute inset-0 w-full h-full object-cover"
+                          style={{ objectPosition: '50% 20%' }} />
                       </>
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-40 h-40 rounded-full bg-[#c9a227]/10 flex items-center justify-center">
-                          <span className="text-7xl text-[#c9a227]/30">👤</span>
-                        </div>
+                      <div className="absolute inset-0 bg-[#0d1e3a] flex items-center justify-center">
+                        <span className="text-8xl text-[#c9a227]/20">👤</span>
                       </div>
                     )}
-                    
-                    {/* Player info overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-6">
-                      <div className="flex items-end justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[#c9a227] text-[9px] sm:text-[10px] lg:text-[11px] uppercase tracking-[0.12em] sm:tracking-[0.15em] lg:tracking-[0.18em] font-bold mb-2 lg:mb-3 opacity-90">
-                            {activePlayer.skills?.[0] || 'Player'}
-                          </p>
-                          <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black text-white uppercase tracking-wide leading-tight mb-2 sm:mb-3">
-                            {activePlayer.name}
-                          </h1>
-                          <div className="flex flex-wrap gap-1.5 lg:gap-2">
-                            {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
-                          </div>
-                        </div>
-                        <div className="bg-gradient-to-br from-[#c9a227]/20 to-[#c9a227]/5 backdrop-blur-sm border border-[#c9a227]/30 rounded-lg px-2.5 py-2 sm:px-3 lg:px-4 lg:py-3 text-center shrink-0 shadow-lg">
-                          <p className="text-white/50 text-[8px] sm:text-[9px] lg:text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.12em] lg:tracking-[0.15em] font-semibold">Base</p>
-                          <p className="text-[#c9a227] font-black text-base sm:text-lg lg:text-2xl tabular-nums">{activePlayer.basePrice}</p>
-                        </div>
+                    <div className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to bottom, rgba(10,22,40,0.1) 0%, rgba(10,22,40,0.2) 40%, rgba(10,22,40,0.85) 70%, rgba(10,22,40,0.98) 100%)' }} />
+
+                    {/* LIVE badge */}
+                    <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-red-500/90 backdrop-blur px-3 py-1 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      <span className="text-white text-[10px] font-bold uppercase tracking-wider">Live</span>
+                    </div>
+
+                    {/* Base price */}
+                    <div className="absolute top-4 left-4 bg-[#0a1628]/80 backdrop-blur border border-[#c9a227]/30 rounded-xl px-3 py-2 text-center">
+                      <p className="text-white/40 text-[9px] uppercase tracking-wider">Base</p>
+                      <p className="text-[#c9a227] font-black text-lg tabular-nums leading-none">{activePlayer.basePrice}</p>
+                    </div>
+
+                    {/* Player info */}
+                    <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-8">
+                      <p className="text-[#c9a227] text-xs uppercase tracking-[0.2em] font-bold mb-2 opacity-90">
+                        {activePlayer.skills?.[0] || 'Player'}
+                      </p>
+                      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white uppercase leading-none tracking-tight mb-3">
+                        {activePlayer.name}
+                      </h1>
+                      <div className="flex flex-wrap gap-2">
+                        {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
                       </div>
                     </div>
                   </div>
 
-                  {/* Current bid display */}
-                  <div className="p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-[#0a1628]/80 to-[#0d1e3a]/50">
-                    <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-3 lg:gap-6 lg:flex lg:items-center lg:justify-between">
+                  {/* Current bid strip */}
+                  <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
+                    <div className="flex items-center justify-between px-5 py-4">
                       <div>
-                        <p className="text-white/50 text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.1em] sm:tracking-[0.12em] lg:tracking-[0.15em] font-bold mb-1.5 lg:mb-2.5">Current Bid</p>
-                        <div className="flex items-baseline gap-1 sm:gap-1.5 lg:gap-2.5">
-                          <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#c9a227] tabular-nums leading-none">
-                            {activeSession.currentBid}
-                          </span>
-                          <span className="text-white/40 text-[10px] sm:text-xs lg:text-sm font-semibold tracking-wide">pts</span>
+                        <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-0.5">Current Bid</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-5xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
+                          <span className="text-white/40 text-base font-semibold">pts</span>
                         </div>
                       </div>
-                      <div className="sm:col-span-2 lg:col-span-1 lg:text-right">
-                        <p className="text-white/50 text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.1em] sm:tracking-[0.12em] lg:tracking-[0.15em] font-bold mb-1.5 lg:mb-2.5">Leading</p>
-                        <div className="inline-flex sm:w-full lg:float-right items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-3 lg:px-4 lg:py-2.5 rounded-lg bg-gradient-to-r from-[#c9a227]/20 to-[#c9a227]/10 border border-[#c9a227]/40 shadow-lg">
+                      <div className="text-right">
+                        <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1">Leading</p>
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${
+                          activeSession.currentHighestBidderName
+                            ? 'bg-[#c9a227]/15 border-[#c9a227]/40'
+                            : 'bg-white/5 border-white/10'
+                        }`}>
                           {activeSession.currentHighestBidderName && (
-                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#c9a227] animate-pulse" />
+                            <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />
                           )}
-                          <span className="text-[10px] sm:text-xs lg:text-sm font-bold text-[#c9a227] tracking-wide truncate">
-                            {activeSession.currentHighestBidderName || 'No bids'}
+                          <span className="text-sm font-bold text-[#c9a227]">
+                            {activeSession.currentHighestBidderName || 'No bids yet'}
                           </span>
                         </div>
                       </div>
@@ -183,43 +190,19 @@ export default function AudiencePage() {
 
                 {/* Bid history */}
                 {bidHistory.length > 0 && (
-                  <div className="w-full lg:w-80 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg lg:rounded-2xl p-4 sm:p-5 lg:p-6 flex flex-col shadow-2xl h-fit max-h-[300px] sm:max-h-[400px] lg:max-h-[600px]">
-                    <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-[#c9a227]/15">
-                      <svg className="w-4 sm:w-5 h-4 sm:h-5 text-[#c9a227] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      <p className="text-white/70 text-[11px] sm:text-xs lg:text-sm font-bold uppercase tracking-wider">Bid History</p>
-                      <span className="ml-auto text-[#c9a227] text-[9px] sm:text-[10px] lg:text-xs font-semibold bg-[#c9a227]/15 px-2 py-0.5 sm:py-1 rounded-md">
-                        {bidHistory.length} bids
-                      </span>
+                  <div className="w-full lg:w-80 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl flex flex-col" style={{ maxHeight: '600px' }}>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10">
+                      <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
+                      <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>
                     </div>
-                    <div className="space-y-1.5 sm:space-y-2 overflow-y-auto pr-2">
+                    <div className="flex-1 overflow-y-auto divide-y divide-[#c9a227]/5">
                       {bidHistory.map((b, i) => (
-                        <div 
-                          key={i} 
-                          className={`flex items-center justify-between py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-lg transition-all duration-200 ${
-                            i === 0 
-                              ? 'bg-gradient-to-r from-[#c9a227]/20 to-[#c9a227]/10 border border-[#c9a227]/40 shadow-md' 
-                              : 'bg-[#0a1628]/60 border border-[#c9a227]/10 hover:border-[#c9a227]/25 hover:bg-[#0a1628]/80'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                            <span className={`text-[9px] sm:text-[10px] lg:text-xs font-mono font-bold tabular-nums w-5 text-center ${
-                              i === 0 ? 'text-[#c9a227]' : 'text-white/40'
-                            }`}>
-                              #{bidHistory.length - i}
-                            </span>
-                            <span className={`text-[10px] sm:text-xs lg:text-sm font-semibold truncate ${
-                              i === 0 ? 'text-white' : 'text-white/70'
-                            }`}>
-                              {b.teamName}
-                            </span>
+                        <div key={i} className={`flex items-center justify-between px-4 py-2.5 ${i === 0 ? 'bg-[#c9a227]/8' : ''}`}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white/25 text-xs font-mono w-6 text-right">#{bidHistory.length - i}</span>
+                            <span className={`text-sm font-semibold ${i === 0 ? 'text-white' : 'text-white/60'}`}>{b.teamName}</span>
                           </div>
-                          <span className={`font-black text-[10px] sm:text-xs lg:text-sm tabular-nums ml-1.5 sm:ml-2 shrink-0 ${
-                            i === 0 ? 'text-[#c9a227]' : 'text-white/60'
-                          }`}>
-                            {b.amount}
-                          </span>
+                          <span className={`text-sm font-black tabular-nums ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>{b.amount}</span>
                         </div>
                       ))}
                     </div>
@@ -227,12 +210,12 @@ export default function AudiencePage() {
                 )}
               </>
             ) : (
-              <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/15 rounded-lg lg:rounded-2xl flex flex-col items-center justify-center p-6 sm:p-8 lg:p-12 text-center min-h-[400px] sm:min-h-[500px]">
-                <div className="w-16 sm:w-20 h-16 sm:h-20 rounded-full bg-[#c9a227]/5 flex items-center justify-center mb-4">
-                  <span className="text-3xl sm:text-4xl">⏳</span>
+              <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
+                <div className="w-20 h-20 rounded-full bg-[#c9a227]/5 border border-[#c9a227]/10 flex items-center justify-center mb-4">
+                  <span className="text-4xl">⏳</span>
                 </div>
-                <p className="text-white/60 text-base sm:text-lg font-semibold mb-2">Waiting for Auction</p>
-                <p className="text-white/30 text-xs sm:text-sm">The next player will appear here shortly</p>
+                <p className="text-white/60 text-xl font-bold mb-2">Waiting for Auction</p>
+                <p className="text-white/25 text-sm">The next player will appear here shortly</p>
               </div>
             )}
           </>

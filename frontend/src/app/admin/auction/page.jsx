@@ -86,7 +86,14 @@ export default function AuctionControl() {
     setActionLoading(true);
     const res = await request('/api/auction/sold', { method: 'POST', body: JSON.stringify({ sessionId: activeSession._id }) });
     setActionLoading(false);
-    if (res?.error) toast(res.error, 'error');
+    if (res?.error) {
+      toast(res.error, 'error');
+    } else {
+      // Update state immediately — don't wait for socket event
+      toast(`${res.player?.name} → ${res.team?.name}`, 'success');
+      setActiveSession(null); setActivePlayer(null); setBidHistory([]);
+      loadData();
+    }
   };
 
   const markUnsold = async () => {
@@ -94,7 +101,14 @@ export default function AuctionControl() {
     setActionLoading(true);
     const res = await request('/api/auction/unsold', { method: 'POST', body: JSON.stringify({ sessionId: activeSession._id }) });
     setActionLoading(false);
-    if (res?.error) toast(res.error, 'error');
+    if (res?.error) {
+      toast(res.error, 'error');
+    } else {
+      // Update state immediately — don't wait for socket event
+      toast(`${res.player?.name} unsold`, 'info');
+      setActiveSession(null); setActivePlayer(null); setBidHistory([]);
+      loadData();
+    }
   };
 
   const triggerResale = async (teamId) => {
