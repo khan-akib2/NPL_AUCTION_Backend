@@ -124,66 +124,79 @@ export default function PlayersPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <div className="flex items-center justify-center h-40"><Spinner size="lg" /></div>
-        ) : (
-          <>
-            {/* Mobile card list */}
-            <div className="lg:hidden divide-y divide-[#c9a227]/10">
-              {filtered.map(p => (
-                <div key={p._id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#0d1e3a] border border-[#c9a227]/15 shrink-0">
-                    {p.photo ? <img src={p.photo} alt={p.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">?</div>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white text-sm font-medium truncate">{p.name}</div>
-                    <div className="flex gap-1 mt-0.5 flex-wrap">{p.skills?.slice(0,2).map(s => <SkillBadge key={s} skill={s} />)}</div>
-                    <div className="text-white/30 text-xs mt-0.5 capitalize">{p.status} {p.soldTo?.name ? `· ${p.soldTo.name}` : ''} {p.soldPrice ? `· ${p.soldPrice}pts` : ''}</div>
-                  </div>
-                  <div className="flex gap-3 shrink-0">
-                    <button onClick={() => handleEdit(p)} className="text-white/30 hover:text-white text-xs">Edit</button>
-                    <button onClick={() => handleDelete(p._id)} className="text-white/20 hover:text-white/60 text-xs">Del</button>
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="flex-1 overflow-hidden p-4 lg:p-6">
+        <div className="h-full border border-[#c9a227]/20 rounded-xl overflow-hidden bg-[#060f1e] flex flex-col">
+          {/* iframe-style header bar */}
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+            <span className="ml-2 text-white/20 text-xs">players · {filtered.length} of {players.length}</span>
+          </div>
 
-            {/* Desktop table */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full text-sm min-w-[600px]">
-                <thead className="sticky top-0 bg-[#0a1628] z-10">
-                  <tr className="border-b border-[#c9a227]/15">
-                    <th className="text-left px-6 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Name</th>
-                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Skills</th>
-                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Base</th>
-                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Status</th>
-                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Team</th>
-                    <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Price</th>
-                    <th className="text-right px-6 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+          {/* scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center h-40"><Spinner size="lg" /></div>
+            ) : (
+              <>
+                {/* Mobile card list */}
+                <div className="lg:hidden divide-y divide-[#c9a227]/10">
                   {filtered.map(p => (
-                    <tr key={p._id} className="border-b border-[#c9a227]/8 hover:bg-[#c9a227]/5 transition-colors">
-                      <td className="px-6 py-3 text-white font-medium">{p.name}</td>
-                      <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{p.skills?.map(s => <SkillBadge key={s} skill={s} />)}</div></td>
-                      <td className="px-4 py-3 text-white/40">{p.basePrice}</td>
-                      <td className="px-4 py-3 text-white/50 capitalize">{p.status}</td>
-                      <td className="px-4 py-3 text-white/30">{p.soldTo?.name || '—'}</td>
-                      <td className="px-4 py-3 text-white/50">{p.soldPrice || '—'}</td>
-                      <td className="px-6 py-3 text-right space-x-4">
+                    <div key={p._id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#0d1e3a] border border-[#c9a227]/15 shrink-0">
+                        {p.photo ? <img src={p.photo} alt={p.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">?</div>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-sm font-medium truncate">{p.name}</div>
+                        <div className="flex gap-1 mt-0.5 flex-wrap">{p.skills?.slice(0,2).map(s => <SkillBadge key={s} skill={s} />)}</div>
+                        <div className="text-white/30 text-xs mt-0.5 capitalize">{p.status} {p.soldTo?.name ? `· ${p.soldTo.name}` : ''} {p.soldPrice ? `· ${p.soldPrice}pts` : ''}</div>
+                      </div>
+                      <div className="flex gap-3 shrink-0">
                         <button onClick={() => handleEdit(p)} className="text-white/30 hover:text-white text-xs">Edit</button>
-                        <button onClick={() => handleDelete(p._id)} className="text-white/20 hover:text-white/60 text-xs">Delete</button>
-                      </td>
-                    </tr>
+                        <button onClick={() => handleDelete(p._id)} className="text-white/20 hover:text-white/60 text-xs">Del</button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-        {!loading && filtered.length === 0 && <p className="text-center text-white/30 py-16 text-sm">No players found</p>}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full text-sm min-w-[600px]">
+                    <thead className="sticky top-0 bg-[#0a1628] z-10">
+                      <tr className="border-b border-[#c9a227]/15">
+                        <th className="text-left px-6 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Name</th>
+                        <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Skills</th>
+                        <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Base</th>
+                        <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Status</th>
+                        <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Team</th>
+                        <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Price</th>
+                        <th className="text-right px-6 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map(p => (
+                        <tr key={p._id} className="border-b border-[#c9a227]/8 hover:bg-[#c9a227]/5 transition-colors">
+                          <td className="px-6 py-3 text-white font-medium">{p.name}</td>
+                          <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{p.skills?.map(s => <SkillBadge key={s} skill={s} />)}</div></td>
+                          <td className="px-4 py-3 text-white/40">{p.basePrice}</td>
+                          <td className="px-4 py-3 text-white/50 capitalize">{p.status}</td>
+                          <td className="px-4 py-3 text-white/30">{p.soldTo?.name || '—'}</td>
+                          <td className="px-4 py-3 text-white/50">{p.soldPrice || '—'}</td>
+                          <td className="px-6 py-3 text-right space-x-4">
+                            <button onClick={() => handleEdit(p)} className="text-white/30 hover:text-white text-xs">Edit</button>
+                            <button onClick={() => handleDelete(p._id)} className="text-white/20 hover:text-white/60 text-xs">Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+            {!loading && filtered.length === 0 && <p className="text-center text-white/30 py-16 text-sm">No players found</p>}
+          </div>
+        </div>
       </div>
 
       {/* Modal */}

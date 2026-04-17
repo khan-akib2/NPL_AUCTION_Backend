@@ -123,16 +123,16 @@ export default function CaptainDashboard() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row lg:gap-5 p-4 lg:p-6 gap-4">
+      <div className="flex-1 flex flex-col lg:flex-row lg:gap-6 p-4 lg:p-8 gap-4 content-start">
 
         {/* Auction panel */}
-        <div className={`flex-1 flex flex-col gap-4 ${tab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
+        <div className={`flex-1 min-w-0 flex flex-col gap-4 ${tab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
           {activeSession && activePlayer ? (
             <>
               {/* Main player card */}
-              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-2xl h-fit">
                 {/* Player photo section */}
-                <div className="relative h-64 lg:h-80 overflow-hidden bg-gradient-to-br from-[#0a1628] to-[#0d1e3a]">
+                <div className="relative h-64 lg:h-72 overflow-hidden bg-gradient-to-br from-[#0a1628] to-[#0d1e3a]">
                   {activePlayer.photo ? (
                     <>
                       <img src={activePlayer.photo} alt={activePlayer.name}
@@ -149,48 +149,48 @@ export default function CaptainDashboard() {
                   
                   {/* Player info overlay */}
                   <div className="absolute bottom-0 left-0 right-0 p-5 lg:p-6">
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-end justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[#c9a227] text-xs uppercase tracking-[0.15em] font-semibold mb-2 opacity-80">
+                        <p className="text-[#c9a227] text-[10px] lg:text-[11px] uppercase tracking-[0.15em] lg:tracking-[0.18em] font-bold mb-2 lg:mb-3 opacity-90">
                           {activePlayer.skills?.[0] || 'Player'}
                         </p>
-                        <h1 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tight leading-none mb-3">
+                        <h1 className="text-2xl lg:text-3xl xl:text-4xl font-black text-white uppercase tracking-wide leading-tight mb-3">
                           {activePlayer.name}
                         </h1>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 lg:gap-2">
                           {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
                         </div>
                       </div>
-                      <div className="bg-[#0a1628]/80 backdrop-blur-sm border border-[#c9a227]/20 rounded-lg px-3 py-2 text-center shrink-0">
-                        <p className="text-white/40 text-[10px] uppercase tracking-wider">Base</p>
-                        <p className="text-white font-bold text-sm">{activePlayer.basePrice}</p>
+                      <div className="bg-gradient-to-br from-[#c9a227]/20 to-[#c9a227]/5 backdrop-blur-sm border border-[#c9a227]/30 rounded-lg lg:rounded-xl px-3 py-2 lg:px-4 lg:py-3 text-center shrink-0 shadow-lg">
+                        <p className="text-white/50 text-[9px] lg:text-[11px] uppercase tracking-[0.12em] lg:tracking-[0.15em] font-semibold">Base</p>
+                        <p className="text-[#c9a227] font-black text-lg lg:text-2xl tabular-nums">{activePlayer.basePrice}</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Bidding section */}
-                <div className="p-5 lg:p-6 bg-[#0a1628]/50">
+                <div className="p-4 lg:p-6 bg-gradient-to-br from-[#0a1628]/80 to-[#0d1e3a]/50">
                   {/* Current bid display */}
-                  <div className="flex items-center justify-between mb-5 pb-5 border-b border-[#c9a227]/10">
+                  <div className="flex items-center justify-between mb-4 lg:mb-5 pb-4 lg:pb-5 border-b border-[#c9a227]/10">
                     <div>
-                      <p className="text-white/40 text-xs uppercase tracking-[0.12em] mb-1.5">Current Bid</p>
-                      <div className="flex items-baseline gap-2">
+                      <p className="text-white/50 text-[10px] lg:text-xs uppercase tracking-[0.12em] lg:tracking-[0.15em] font-bold mb-1.5 lg:mb-2">Current Bid</p>
+                      <div className="flex items-baseline gap-1.5 lg:gap-2">
                         <span className="text-4xl lg:text-5xl font-black text-[#c9a227] tabular-nums leading-none">
                           {activeSession.currentBid}
                         </span>
-                        <span className="text-white/30 text-base font-medium">pts</span>
+                        <span className="text-white/40 text-xs lg:text-sm font-semibold tracking-wide">pts</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white/40 text-xs uppercase tracking-[0.12em] mb-1.5">Leading</p>
-                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                      <p className="text-white/50 text-[10px] lg:text-xs uppercase tracking-[0.12em] lg:tracking-[0.15em] font-bold mb-1.5 lg:mb-2">Leading</p>
+                      <div className={`inline-flex items-center gap-2 px-3 py-2 lg:px-4 lg:py-2.5 rounded-lg transition-all ${
                         isLeading 
-                          ? 'bg-[#c9a227]/15 border border-[#c9a227]/30' 
+                          ? 'bg-gradient-to-r from-[#c9a227]/20 to-[#c9a227]/10 border border-[#c9a227]/40' 
                           : 'bg-white/5 border border-white/10'
                       }`}>
-                        {isLeading && <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />}
-                        <span className={`text-sm font-semibold ${isLeading ? 'text-[#c9a227]' : 'text-white/50'}`}>
+                        {isLeading && <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#c9a227] animate-pulse" />}
+                        <span className={`text-xs lg:text-sm font-bold ${isLeading ? 'text-[#c9a227]' : 'text-white/50'}`}>
                           {activeSession.currentHighestBidderName
                             ? isLeading ? 'You' : activeSession.currentHighestBidderName
                             : 'No bids'}
@@ -203,14 +203,15 @@ export default function CaptainDashboard() {
                   <button 
                     onClick={placeBid} 
                     disabled={!canBid || bidding}
-                    className="w-full bg-[#c9a227] text-[#0a1628] font-black py-4 rounded-xl text-base transition-all hover:bg-[#f0c040] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg shadow-[#c9a227]/20 active:scale-[0.98]"
+                    className="w-full bg-[#c9a227] text-[#0a1628] font-black py-3 lg:py-4 rounded-xl text-sm lg:text-base transition-all hover:bg-[#f0c040] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 lg:gap-3 shadow-lg shadow-[#c9a227]/20 active:scale-[0.98]"
                   >
                     {bidding ? (
                       <Spinner size="sm" />
                     ) : (
                       <>
-                        <span className="text-2xl">↑</span>
-                        <span>Place Bid · {activeSession.currentBid + 10} pts</span>
+                        <span className="text-xl lg:text-2xl">↑</span>
+                        <span className="hidden sm:inline">Place Bid · {activeSession.currentBid + 10} pts</span>
+                        <span className="sm:hidden text-xs">{activeSession.currentBid + 10}</span>
                       </>
                     )}
                   </button>
@@ -218,7 +219,7 @@ export default function CaptainDashboard() {
                   {/* Status message */}
                   {!canBid && activeSession && (
                     <div className="mt-3 text-center">
-                      <p className="text-white/40 text-xs">
+                      <p className="text-white/40 text-[10px] lg:text-xs">
                         {team?.playerCount >= 7 
                           ? '⚠️ Squad is full (7/7 players)' 
                           : `⚠️ Insufficient budget · Need ${activeSession.currentBid + 10} pts, have ${team?.budget} pts`
@@ -231,23 +232,43 @@ export default function CaptainDashboard() {
 
               {/* Bid history */}
               {bidHistory.length > 0 && (
-                <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-4 lg:p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">📊</span>
-                    <p className="text-white/60 text-sm font-semibold uppercase tracking-wider">Bid History</p>
-                    <span className="ml-auto text-white/30 text-xs">{bidHistory.length} bids</span>
+                <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-5 lg:p-6 shadow-2xl max-h-[400px] lg:max-h-[300px] overflow-hidden flex flex-col">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#c9a227]/15">
+                    <svg className="w-5 h-5 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <p className="text-white/70 text-xs lg:text-sm font-bold uppercase tracking-wider">Bid History</p>
+                    <span className="ml-auto text-[#c9a227] text-[10px] lg:text-xs font-semibold bg-[#c9a227]/15 px-2 py-1 rounded-md">
+                      {bidHistory.length} bids
+                    </span>
                   </div>
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                  <div className="space-y-1.5 overflow-y-auto pr-2">
                     {bidHistory.map((b, i) => (
                       <div 
                         key={i} 
-                        className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#0a1628]/50 border border-[#c9a227]/5 hover:border-[#c9a227]/15 transition-colors"
+                        className={`flex items-center justify-between py-2 px-3 rounded-lg transition-all ${
+                          i === 0 
+                            ? 'bg-gradient-to-r from-[#c9a227]/20 to-[#c9a227]/10 border border-[#c9a227]/40' 
+                            : 'bg-[#0a1628]/60 border border-[#c9a227]/10 hover:border-[#c9a227]/25'
+                        }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-white/20 text-xs font-mono">#{bidHistory.length - i}</span>
-                          <span className="text-white/60 text-sm">{b.teamName}</span>
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className={`text-[10px] lg:text-xs font-mono font-bold tabular-nums w-5 text-center ${
+                            i === 0 ? 'text-[#c9a227]' : 'text-white/40'
+                          }`}>
+                            #{bidHistory.length - i}
+                          </span>
+                          <span className={`text-xs lg:text-sm font-semibold truncate ${
+                            i === 0 ? 'text-white' : 'text-white/70'
+                          }`}>
+                            {b.teamName}
+                          </span>
                         </div>
-                        <span className="text-[#c9a227] font-bold text-sm tabular-nums">{b.amount} pts</span>
+                        <span className={`font-black text-xs lg:text-sm tabular-nums ml-2 shrink-0 ${
+                          i === 0 ? 'text-[#c9a227]' : 'text-white/60'
+                        }`}>
+                          {b.amount}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -255,7 +276,7 @@ export default function CaptainDashboard() {
               )}
             </>
           ) : (
-            <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[500px]">
+            <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[400px] h-fit">
               <div className="w-20 h-20 rounded-full bg-[#c9a227]/5 flex items-center justify-center mb-4">
                 <span className="text-4xl">⏳</span>
               </div>
@@ -266,35 +287,35 @@ export default function CaptainDashboard() {
         </div>
 
         {/* Squad panel */}
-        <div className={`lg:w-72 flex flex-col gap-4 ${tab !== 'squad' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-white/40 text-xs uppercase tracking-wider">Budget</p>
-              <p className="text-white text-sm font-medium">{team?.budget} pts</p>
+        <div className={`lg:w-80 flex flex-col gap-4 h-fit ${tab !== 'squad' ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-5 lg:p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-white/50 text-xs uppercase tracking-wider font-bold">Budget</p>
+              <p className="text-[#c9a227] font-bold text-sm">{team?.budget} pts</p>
             </div>
-            <div className="h-1 bg-[#c9a227]/8 rounded-full overflow-hidden mt-2">
-              <div className="h-full bg-white/25 rounded-full transition-all" style={{ width: `${budgetPct}%` }} />
+            <div className="h-2 bg-[#c9a227]/8 rounded-full overflow-hidden mt-3">
+              <div className="h-full bg-[#c9a227]/50 rounded-full transition-all" style={{ width: `${budgetPct}%` }} />
             </div>
-            <div className="flex justify-between text-xs text-white/30 mt-1.5">
+            <div className="flex justify-between text-xs text-white/40 mt-2">
               <span>Spent: {team?.pointsSpent || 0}</span>
               <span>{budgetPct}%</span>
             </div>
           </div>
 
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-4 flex-1">
-            <p className="text-white/40 text-xs uppercase tracking-wider mb-3">My Squad · {team?.playerCount || 0}/7</p>
-            <div className="space-y-1.5">
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-5 lg:p-6 flex-1 flex flex-col shadow-2xl">
+            <p className="text-white/50 text-xs uppercase tracking-wider font-bold mb-4">My Squad · {team?.playerCount || 0}/7</p>
+            <div className="space-y-2 overflow-y-auto">
               {team?.players?.map(p => (
-                <div key={p._id} className="flex items-center justify-between py-2 border-b border-white/4 last:border-0">
-                  <div>
-                    <p className="text-white/70 text-sm">{p.name}</p>
-                    <div className="flex gap-1 mt-0.5">{p.skills?.slice(0,1).map(s => <SkillBadge key={s} skill={s} />)}</div>
+                <div key={p._id} className="flex items-center justify-between py-3 px-3 rounded-lg bg-[#0a1628]/40 border border-[#c9a227]/10 hover:border-[#c9a227]/20 transition-colors">
+                  <div className="flex-1">
+                    <p className="text-white/80 text-sm font-semibold">{p.name}</p>
+                    <div className="flex gap-1.5 mt-1">{p.skills?.slice(0,1).map(s => <SkillBadge key={s} skill={s} />)}</div>
                   </div>
-                  <span className="text-white/40 text-xs">{p.soldPrice} pts</span>
+                  <span className="text-[#c9a227] text-xs font-bold ml-2">{p.soldPrice}</span>
                 </div>
               ))}
               {Array.from({ length: Math.max(0, 7 - (team?.players?.length || 0)) }).map((_, i) => (
-                <div key={i} className="py-2 border-b border-white/4 last:border-0">
+                <div key={i} className="py-3 px-3 rounded-lg bg-white/5 border border-white/5">
                   <p className="text-white/20 text-xs">Slot {(team?.players?.length || 0) + i + 1}</p>
                 </div>
               ))}

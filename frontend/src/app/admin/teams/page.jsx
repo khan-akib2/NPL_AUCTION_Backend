@@ -120,68 +120,81 @@ export default function TeamsPage() {
       </div>
 
       {/* Scrollable grid */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
-          {teams.map(team => {
-            const pct = Math.round((team.pointsSpent / 1000) * 100);
-            const id = team._id?.toString?.() ?? String(team._id);
-            const isExpanded = expanded !== null && expanded === id;
-            return (
-              <div key={team._id} className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl overflow-hidden">
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h2 className="text-base font-semibold text-white">{team.name}</h2>
-                      <p className="text-white/40 text-xs mt-0.5">{team.captainId?.name || 'No captain'}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-white font-semibold">{team.budget}</div>
-                      <div className="text-white/40 text-xs">pts budget</div>
-                    </div>
-                  </div>
+      <div className="flex-1 overflow-hidden p-4 lg:p-6">
+        <div className="h-full border border-[#c9a227]/20 rounded-xl overflow-hidden bg-[#060f1e] flex flex-col">
+          {/* iframe-style header bar */}
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+            <span className="ml-2 text-white/20 text-xs">teams · {teams.length} total</span>
+          </div>
 
-                  <div className="h-1 bg-[#c9a227]/8 rounded-full overflow-hidden mb-4">
-                    <div className="h-full bg-[#0d1e3a]0 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-white/40 mb-4">
-                    <span>{team.playerCount}/7 players</span>
-                    <span>{pct}% spent</span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setExpanded(isExpanded ? null : id)}
-                      className="flex-1 text-xs text-white/30 hover:text-white bg-[#0d1e3a] border border-[#c9a227]/15 hover:bg-[#c9a227]/12 py-1.5 rounded-lg transition-colors">
-                      {isExpanded ? 'Hide Squad' : 'View Squad'}
-                    </button>
-                    <button onClick={() => openEdit(team)}
-                      className="text-xs text-white/30 hover:text-white bg-[#0d1e3a] border border-[#c9a227]/15 hover:bg-[#c9a227]/12 px-3 py-1.5 rounded-lg transition-colors">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(team._id)}
-                      className="text-xs text-white/30 hover:text-white/60 bg-[#0d1e3a] border border-[#c9a227]/15 hover:bg-[#c9a227]/12 px-3 py-1.5 rounded-lg transition-colors">
-                      Del
-                    </button>
-                  </div>
-                </div>
-
-                {isExpanded && team.players !== undefined && (
-                  <div className="border-t border-[#c9a227]/15 p-3 space-y-1.5 max-h-48 overflow-y-auto">
-                    {team.players?.length === 0 && (
-                      <p className="text-white/30 text-xs text-center py-3">No players yet</p>
-                    )}
-                    {team.players?.map(p => (
-                      <div key={p._id} className="flex items-center justify-between bg-[#0d1e3a] rounded-lg px-3 py-2">
-                        <span className="text-white/60 text-xs">{p.name}</span>
-                        <span className="text-white/35 text-xs">{p.soldPrice} pts</span>
+          {/* scrollable content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
+              {teams.map(team => {
+                const pct = Math.round((team.pointsSpent / 1000) * 100);
+                const id = team._id?.toString?.() ?? String(team._id);
+                const isExpanded = expanded !== null && expanded === id;
+                return (
+                  <div key={team._id} className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl overflow-hidden">
+                    <div className="p-5">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h2 className="text-base font-semibold text-white">{team.name}</h2>
+                          <p className="text-white/40 text-xs mt-0.5">{team.captainId?.name || 'No captain'}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-white font-semibold">{team.budget}</div>
+                          <div className="text-white/40 text-xs">pts budget</div>
+                        </div>
                       </div>
-                    ))}
+
+                      <div className="h-1 bg-[#c9a227]/8 rounded-full overflow-hidden mb-4">
+                        <div className="h-full bg-[#0d1e3a]0 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-white/40 mb-4">
+                        <span>{team.playerCount}/7 players</span>
+                        <span>{pct}% spent</span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setExpanded(isExpanded ? null : id)}
+                          className="flex-1 text-xs text-white/30 hover:text-white bg-[#0d1e3a] border border-[#c9a227]/15 hover:bg-[#c9a227]/12 py-1.5 rounded-lg transition-colors">
+                          {isExpanded ? 'Hide Squad' : 'View Squad'}
+                        </button>
+                        <button onClick={() => openEdit(team)}
+                          className="text-xs text-white/30 hover:text-white bg-[#0d1e3a] border border-[#c9a227]/15 hover:bg-[#c9a227]/12 px-3 py-1.5 rounded-lg transition-colors">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(team._id)}
+                          className="text-xs text-white/30 hover:text-white/60 bg-[#0d1e3a] border border-[#c9a227]/15 hover:bg-[#c9a227]/12 px-3 py-1.5 rounded-lg transition-colors">
+                          Del
+                        </button>
+                      </div>
+                    </div>
+
+                    {isExpanded && team.players !== undefined && (
+                      <div className="border-t border-[#c9a227]/15 p-3 space-y-1.5 max-h-48 overflow-y-auto">
+                        {team.players?.length === 0 && (
+                          <p className="text-white/30 text-xs text-center py-3">No players yet</p>
+                        )}
+                        {team.players?.map(p => (
+                          <div key={p._id} className="flex items-center justify-between bg-[#0d1e3a] rounded-lg px-3 py-2">
+                            <span className="text-white/60 text-xs">{p.name}</span>
+                            <span className="text-white/35 text-xs">{p.soldPrice} pts</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 

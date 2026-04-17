@@ -128,11 +128,15 @@ export default function AuctionControl() {
 
         {/* Queue */}
         <div className={`lg:col-span-3 flex flex-col min-h-0 ${mobileTab !== 'queue' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl flex flex-col h-full overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#c9a227]/15 flex items-center justify-between shrink-0">
-              <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Queue</span>
-              <span className="text-xs text-white/30">{available.length} players</span>
-            </div>            <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl flex flex-col h-full overflow-hidden shadow-2xl">
+            {/* iframe-style header */}
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="ml-2 text-white/20 text-xs">queue · {available.length} players</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
               {available.map(p => (
                 <button key={p._id} onClick={() => setSelectedPlayer(p)}
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
@@ -158,9 +162,16 @@ export default function AuctionControl() {
 
         {/* Active Auction */}
         <div className={`lg:col-span-6 flex flex-col min-h-0 ${mobileTab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl flex flex-col h-full overflow-hidden">
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl flex flex-col h-full overflow-hidden shadow-2xl">
+            {/* iframe-style header */}
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="ml-2 text-white/20 text-xs">auction · {activeSession ? 'active' : 'idle'}</span>
+            </div>
             {activeSession && activePlayer ? (
-              <div className="flex flex-col h-full">
+              <div className="flex flex-col h-full flex-1 overflow-hidden">
 
                 {/* Player Card */}
                 <div className="relative overflow-hidden bg-[#0a1628]" style={{ minHeight: '280px', flex: 1 }}>
@@ -238,9 +249,13 @@ export default function AuctionControl() {
 
         {/* Bids + Resale */}
         <div className={`lg:col-span-3 flex flex-col gap-3 min-h-0 ${mobileTab !== 'bids' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl flex flex-col flex-1 overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#c9a227]/15 shrink-0">
-              <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Bid Feed</span>
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl flex flex-col flex-1 overflow-hidden shadow-2xl">
+            {/* iframe-style header */}
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+              <span className="ml-2 text-white/20 text-xs">bid-feed · {bidHistory.length} bids</span>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0">
               {bidHistory.length === 0 && <p className="text-white/30 text-xs text-center py-6">No bids yet</p>}
@@ -254,9 +269,16 @@ export default function AuctionControl() {
           </div>
 
           {resaleTeams.length > 0 && (
-            <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-3">
-              <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Resale</p>
-              <div className="space-y-1.5">
+            <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl overflow-hidden shadow-2xl">
+              {/* iframe-style header */}
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
+                <span className="ml-2 text-white/20 text-xs">resale · {resaleTeams.length} teams</span>
+              </div>
+              <div className="p-3">
+                <div className="space-y-1.5">
                 {resaleTeams.map(t => (
                   <div key={t._id} className="flex items-center justify-between">
                     <div>
@@ -269,6 +291,7 @@ export default function AuctionControl() {
                     </button>
                   </div>
                 ))}
+                </div>
               </div>
             </div>
           )}
