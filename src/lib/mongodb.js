@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
-import { setServers } from 'dns';
+import dns from 'dns';
 
-// Force Google DNS for Atlas SRV resolution
-setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+// Force Google DNS only in development (fixes Atlas SRV on some local networks)
+if (process.env.NODE_ENV !== 'production') {
+  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/nit_auction';
 

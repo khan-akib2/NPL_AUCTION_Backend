@@ -4,10 +4,9 @@ const next = require('next');
 const { Server } = require('socket.io');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = process.env.HOSTNAME || '0.0.0.0';
 const port = parseInt(process.env.PORT || '3000', 10);
 
-const app = next({ dev, hostname, port });
+const app = next({ dev });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
@@ -16,7 +15,7 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error('Error handling request:', err);
+      console.error('Error:', err);
       res.statusCode = 500;
       res.end('Internal Server Error');
     }
@@ -35,7 +34,12 @@ app.prepare().then(() => {
     socket.on('disconnect', () => console.log('Client disconnected:', socket.id));
   });
 
-  httpServer.listen(port, hostname, () => {
-    console.log(`> Ready on http://${hostname}:${port}`);
+  // Render requires binding to 0.0.0.0
+  httpServer.listen(port, '0.0.0.0', (err) => {
+    if (err) throw err;
+    console.log(`> Ready on port ${port}`);
   });
+}).catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
