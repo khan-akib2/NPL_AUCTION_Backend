@@ -40,3 +40,11 @@ next-env.d.ts
 # OS files
 .DS_Store
 Thumbs.db
+
+# IDE / editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
