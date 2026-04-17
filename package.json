@@ -1,29 +1,12 @@
 {
-  "name": "semi_final_auction",
-  "version": "0.1.0",
+  "name": "nit-auction-monorepo",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
-    "build": "next build",
-    "start": "node server.js",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "dns2": "^2.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.4.1",
-    "next": "16.2.3",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3"
+    "dev": "concurrently -n frontend,backend -c cyan,yellow \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
+    "install:all": "npm install --prefix frontend && npm install --prefix backend"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "babel-plugin-react-compiler": "1.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.3",
-    "tailwindcss": "^4"
+    "concurrently": "^8.2.2"
   }
 }
