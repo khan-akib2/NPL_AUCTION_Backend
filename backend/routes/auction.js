@@ -51,6 +51,9 @@ router.post('/start', authMiddleware, adminOnly, async (req, res) => {
 router.post('/bid', authMiddleware, captainOnly, async (req, res) => {
   try {
     const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
+    if (!req.user.teamId) return res.status(400).json({ error: 'No team assigned to your account' });
+
     const session = await AuctionSession.findById(sessionId);
     if (!session || session.status !== 'active') return res.status(400).json({ error: 'No active auction' });
 
@@ -85,10 +88,10 @@ router.post('/sold', authMiddleware, adminOnly, async (req, res) => {
     session.status = 'closed'; session.endedAt = new Date(); await session.save();
 
     const player = await Player.findByIdAndUpdate(session.playerId,
-      { status: 'sold', soldTo: session.currentHighestBidder, soldPrice: session.currentBid }, { new: true });
+      { status: 'sold', soldTo: session.currentHighestBidder, soldPrice: session.currentBid }, { returnDocument: 'after' });
     const team = await Team.findByIdAndUpdate(session.currentHighestBidder,
       { $push: { players: session.playerId }, $inc: { budget: -session.currentBid, pointsSpent: session.currentBid, playerCount: 1 } },
-      { new: true });
+      { returnDocument: 'after' });
 
     await AuctionLog.create({ playerId: session.playerId, teamId: session.currentHighestBidder, action: 'sold', amount: session.currentBid });
     const io = getIO();
@@ -105,7 +108,7 @@ router.post('/unsold', authMiddleware, adminOnly, async (req, res) => {
     if (!session || session.status !== 'active') return res.status(400).json({ error: 'No active auction' });
 
     session.status = 'closed'; session.endedAt = new Date(); await session.save();
-    const player = await Player.findByIdAndUpdate(session.playerId, { status: 'unsold' }, { new: true });
+    const player = await Player.findByIdAndUpdate(session.playerId, { status: 'unsold' }, { returnDocument: 'after' });
     await AuctionLog.create({ playerId: session.playerId, action: 'unsold', amount: 0 });
 
     const io = getIO();

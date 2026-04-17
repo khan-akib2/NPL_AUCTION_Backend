@@ -41,7 +41,7 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 // PUT /api/players/:id
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const player = await Player.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const player = await Player.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     if (!player) return res.status(404).json({ error: 'Player not found' });
     res.json({ player });
   } catch (e) {

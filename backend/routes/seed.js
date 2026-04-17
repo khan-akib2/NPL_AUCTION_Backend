@@ -21,7 +21,7 @@ const PLAYER_NAMES = [
 // GET /api/seed?secret=<SEED_SECRET>
 router.get('/', async (req, res) => {
   const secret = req.query.secret;
-  if (secret !== (process.env.SEED_SECRET || 'seed123')) {
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 

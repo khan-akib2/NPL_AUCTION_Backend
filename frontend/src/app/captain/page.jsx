@@ -23,6 +23,8 @@ export default function CaptainDashboard() {
   const [loading, setLoading] = useState(true);
   const [bidding, setBidding] = useState(false);
   const [tab, setTab] = useState('auction');
+  const [isConnected, setIsConnected] = useState(false);
+  const [viewerCount, setViewerCount] = useState(0);
 
   const loadData = useCallback(async () => {
     const [teamRes, sessionRes] = await Promise.all([
@@ -38,11 +40,10 @@ export default function CaptainDashboard() {
       setActiveSession(null); setActivePlayer(null);
     }
     setLoading(false);
-  }, []);
+  }, [request]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Poll every 3s as fallback when socket isn't connected
   useEffect(() => {
     const interval = setInterval(() => {
       if (socket && !socket.connected) loadData();
@@ -52,6 +53,11 @@ export default function CaptainDashboard() {
 
   useEffect(() => {
     if (!socket) return;
+    socket.on('connect', () => setIsConnected(true));
+    socket.on('disconnect', () => setIsConnected(false));
+    // Sync initial state
+    setIsConnected(socket.connected);
+    socket.on('viewers:count', (count) => setViewerCount(count));
     socket.on('auction:start', ({ session, player }) => {
       setActiveSession(session); setActivePlayer(player); setBidHistory([]);
       setTab('auction');
@@ -68,7 +74,15 @@ export default function CaptainDashboard() {
       loadData();
     });
     socket.on('auction:unsold', () => { setActiveSession(null); setActivePlayer(null); setBidHistory([]); });
-    return () => { socket.off('auction:start'); socket.off('auction:bid_update'); socket.off('auction:sold'); socket.off('auction:unsold'); };
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('viewers:count');
+      socket.off('auction:start');
+      socket.off('auction:bid_update');
+      socket.off('auction:sold');
+      socket.off('auction:unsold');
+    };
   }, [socket, toast, team, loadData]);
 
   const placeBid = async () => {
@@ -82,13 +96,14 @@ export default function CaptainDashboard() {
   const canBid = activeSession && team && team.budget >= (activeSession.currentBid + 10) && team.playerCount < 7;
   const isLeading = activeSession?.currentHighestBidder?.toString() === team?._id?.toString();
   const budgetPct = team ? Math.round((team.pointsSpent / 1000) * 100) : 0;
+  const remaining = team && activeSession ? team.budget - (activeSession.currentBid + 10) : null;
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0a1628]"><Spinner size="lg" /></div>;
 
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d1e3a] border-b border-[#c9a227]/15 px-4 lg:px-8 h-12 lg:h-14 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-[#0d1e3a]/95 backdrop-blur border-b border-[#c9a227]/15 px-4 lg:px-8 h-12 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-2 min-w-0">
           <Logo size="sm" className="shrink-0 rounded-xl w-7 h-7" />
           <span className="text-[#c9a227]/50 text-xs uppercase tracking-widest hidden sm:block">NIT</span>
@@ -96,179 +111,180 @@ export default function CaptainDashboard() {
           <span className="text-white text-sm font-semibold truncate">{team?.name}</span>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <div className="text-right">
-            <span className="text-[#c9a227] font-bold text-sm">{team?.budget ?? 0}</span>
-            <span className="text-white/40 text-xs ml-1">pts</span>
+          {viewerCount > 0 && (
+            <div className="hidden sm:flex items-center gap-2 bg-[#c9a227]/10 border border-[#c9a227]/20 rounded-full px-3 py-1">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9a227] opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#c9a227]" />
+              </span>
+              <span className="text-[#c9a227] text-xs font-bold tabular-nums leading-none">{viewerCount} watching live</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 bg-[#c9a227]/10 border border-[#c9a227]/20 rounded-lg px-3 py-1.5">
+            <span className="text-[#c9a227] font-black text-sm tabular-nums">{team?.budget ?? 0}</span>
+            <span className="text-white/40 text-xs">pts</span>
           </div>
-          <button onClick={() => { logout(); router.push('/login'); }} className="text-white/30 hover:text-white/50 text-xs transition-colors">
-            Out
+          <button onClick={() => { logout(); router.push('/login'); }} className="text-white/30 hover:text-white/60 text-xs transition-colors">
+            Sign Out
           </button>
         </div>
       </header>
 
-      {/* Budget strip */}
-      <div className="h-0.5 sm:h-1 bg-[#c9a227]/8">
-        <div className="h-full bg-white/20 transition-all duration-700" style={{ width: `${budgetPct}%` }} />
+      {/* Budget progress bar */}
+      <div className="h-0.5 bg-[#c9a227]/8">
+        <div className="h-full bg-[#c9a227]/60 transition-all duration-700" style={{ width: `${budgetPct}%` }} />
       </div>
 
       {/* Mobile tabs */}
       <div className="flex border-b border-[#c9a227]/15 lg:hidden">
         <button onClick={() => setTab('auction')}
-          className={`flex-1 py-2.5 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${tab === 'auction' ? 'text-white border-b-2 sm:border-b border-white' : 'text-white/30'}`}>
+          className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${tab === 'auction' ? 'text-[#c9a227] border-b-2 border-[#c9a227]' : 'text-white/30'}`}>
           Live Auction
         </button>
         <button onClick={() => setTab('squad')}
-          className={`flex-1 py-2.5 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${tab === 'squad' ? 'text-white border-b-2 sm:border-b border-white' : 'text-white/30'}`}>
-          My Squad ({team?.playerCount || 0}/7)
+          className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${tab === 'squad' ? 'text-[#c9a227] border-b-2 border-[#c9a227]' : 'text-white/30'}`}>
+          Squad ({team?.playerCount || 0}/7)
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row lg:gap-6 p-3 lg:p-8 gap-3 lg:gap-4 content-start">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-3 lg:p-6">
 
-        {/* Auction panel */}
+        {/* ── Auction panel ── */}
         <div className={`flex-1 min-w-0 flex flex-col gap-4 ${tab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
           {activeSession && activePlayer ? (
             <>
-              {/* Main player card */}
-              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg lg:rounded-2xl overflow-hidden shadow-2xl h-fit">
-                {/* Player photo section */}
-                <div className="relative h-56 sm:h-64 lg:h-72 overflow-hidden bg-gradient-to-br from-[#0a1628] to-[#0d1e3a]">
-                  {activePlayer.photo ? (
-                    <>
-                      <img src={activePlayer.photo} alt={activePlayer.name}
-                        className="absolute inset-0 w-full h-full object-cover object-top" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0d1e3a] via-[#0d1e3a]/60 to-transparent" />
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-32 h-32 rounded-full bg-[#c9a227]/10 flex items-center justify-center">
-                        <span className="text-6xl text-[#c9a227]/30">👤</span>
-                      </div>
+              {/* HERO PLAYER CARD */}
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '420px', height: '55vh', maxHeight: '600px' }}>
+
+                {/* Full-bleed background photo */}
+                {activePlayer.photo ? (
+                  <>
+                    {/* Blurred bg fill */}
+                    <img src={activePlayer.photo} alt=""
+                      className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 pointer-events-none" />
+                    {/* Sharp main photo — centered to show face */}
+                    <img src={activePlayer.photo} alt={activePlayer.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ objectPosition: '50% 20%' }} />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 bg-[#0d1e3a]" />
+                )}
+
+                {/* Dark gradient overlay — heavier at bottom */}
+                <div className="absolute inset-0"
+                  style={{ background: 'linear-gradient(to bottom, rgba(10,22,40,0.1) 0%, rgba(10,22,40,0.2) 40%, rgba(10,22,40,0.85) 70%, rgba(10,22,40,0.98) 100%)' }} />
+
+                {/* LIVE badge top-right */}
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-red-500/90 backdrop-blur px-3 py-1 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  <span className="text-white text-[10px] font-bold uppercase tracking-wider">Live</span>
+                </div>
+
+                {/* Base price badge top-left */}
+                <div className="absolute top-4 left-4 bg-[#0a1628]/80 backdrop-blur border border-[#c9a227]/30 rounded-xl px-3 py-2 text-center">
+                  <p className="text-white/40 text-[9px] uppercase tracking-wider">Base</p>
+                  <p className="text-[#c9a227] font-black text-lg tabular-nums leading-none">{activePlayer.basePrice}</p>
+                </div>
+
+                {/* Player info — bottom overlay */}
+                <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-6">
+                  <p className="text-[#c9a227] text-[10px] uppercase tracking-[0.2em] font-bold mb-1 opacity-90">
+                    {activePlayer.skills?.[0] || 'Player'}
+                  </p>
+                  <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black text-white uppercase leading-none tracking-tight mb-2">
+                    {activePlayer.name}
+                  </h1>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+                  </div>
+                </div>
+              </div>
+
+              {/* BID CONTROL STRIP */}
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
+
+                {/* Current bid + leading */}
+                <div className="flex items-center justify-between px-5 py-3 border-b border-[#c9a227]/10">
+                  <div>
+                    <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-0.5">Current Bid</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl lg:text-4xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
+                      <span className="text-white/40 text-sm font-semibold">pts</span>
                     </div>
-                  )}
-                  
-                  {/* Player info overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 lg:p-6">
-                    <div className="flex items-end justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[#c9a227] text-[9px] sm:text-[10px] lg:text-[11px] uppercase tracking-[0.12em] sm:tracking-[0.15em] lg:tracking-[0.18em] font-bold mb-2 lg:mb-3 opacity-90">
-                          {activePlayer.skills?.[0] || 'Player'}
-                        </p>
-                        <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black text-white uppercase tracking-wide leading-tight mb-2 sm:mb-3">
-                          {activePlayer.name}
-                        </h1>
-                        <div className="flex flex-wrap gap-1.5 lg:gap-2">
-                          {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
-                        </div>
-                      </div>
-                        <div className="bg-gradient-to-br from-[#c9a227]/20 to-[#c9a227]/5 backdrop-blur-sm border border-[#c9a227]/30 rounded-lg px-2.5 py-2 sm:px-3 lg:px-4 lg:py-3 text-center shrink-0 shadow-lg">
-                          <p className="text-white/50 text-[8px] sm:text-[9px] lg:text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.12em] lg:tracking-[0.15em] font-semibold">Base</p>
-                          <p className="text-[#c9a227] font-black text-base sm:text-lg lg:text-2xl tabular-nums">{activePlayer.basePrice}</p>
-                      </div>
+                  </div>
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${
+                    isLeading ? 'bg-[#c9a227]/15 border-[#c9a227]/40' : 'bg-white/5 border-white/10'
+                  }`}>
+                    {isLeading && <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />}
+                    <div>
+                      <p className="text-white/30 text-[9px] uppercase tracking-wider">Leading</p>
+                      <p className={`text-sm font-bold ${isLeading ? 'text-[#c9a227]' : 'text-white/60'}`}>
+                        {activeSession.currentHighestBidderName
+                          ? isLeading ? 'You' : activeSession.currentHighestBidderName
+                          : 'No bids yet'}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Bidding section */}
-                <div className="p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-[#0a1628]/80 to-[#0d1e3a]/50">
-                  {/* Current bid display */}
-                  <div className="flex items-center justify-between mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-[#c9a227]/10">
-                    <div>
-                      <p className="text-white/50 text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.1em] sm:tracking-[0.12em] lg:tracking-[0.15em] font-bold mb-1 sm:mb-1.5">Current Bid</p>
-                      <div className="flex items-baseline gap-1 sm:gap-1.5">
-                        <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#c9a227] tabular-nums leading-none">
-                          {activeSession.currentBid}
-                        </span>
-                        <span className="text-white/40 text-xs lg:text-sm font-semibold tracking-wide">pts</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white/50 text-[10px] lg:text-xs uppercase tracking-[0.12em] lg:tracking-[0.15em] font-bold mb-1.5 lg:mb-2">Leading</p>
-                      <div className={`inline-flex items-center gap-2 px-3 py-2 lg:px-4 lg:py-2.5 rounded-lg transition-all ${
-                        isLeading 
-                          ? 'bg-gradient-to-r from-[#c9a227]/20 to-[#c9a227]/10 border border-[#c9a227]/40' 
-                          : 'bg-white/5 border border-white/10'
-                      }`}>
-                        {isLeading && <span className="w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-[#c9a227] animate-pulse" />}
-                        <span className={`text-xs lg:text-sm font-bold ${isLeading ? 'text-[#c9a227]' : 'text-white/50'}`}>
-                          {activeSession.currentHighestBidderName
-                            ? isLeading ? 'You' : activeSession.currentHighestBidderName
-                            : 'No bids'}
-                        </span>
-                      </div>
-                    </div>
+                {/* Budget impact row */}
+                <div className="grid grid-cols-3 divide-x divide-[#c9a227]/10 border-b border-[#c9a227]/10">
+                  <div className="px-3 py-2 text-center">
+                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Your Budget</p>
+                    <p className="text-white/80 text-sm font-bold tabular-nums">{team.budget} pts</p>
                   </div>
+                  <div className="px-3 py-2 text-center">
+                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Next Bid</p>
+                    <p className="text-[#c9a227] text-sm font-bold tabular-nums">{activeSession.currentBid + 10} pts</p>
+                  </div>
+                  <div className="px-3 py-2 text-center">
+                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">After Bid</p>
+                    <p className={`text-sm font-bold tabular-nums ${remaining !== null && remaining < 0 ? 'text-red-400' : 'text-white/80'}`}>
+                      {remaining !== null ? remaining : '—'} pts
+                    </p>
+                  </div>
+                </div>
 
-                  {/* Bid button */}
-                  <button 
-                    onClick={placeBid} 
+                {/* Bid button */}
+                <div className="p-3">
+                  <button
+                    onClick={placeBid}
                     disabled={!canBid || bidding}
-                    className="w-full bg-[#c9a227] text-[#0a1628] font-black py-2.5 sm:py-3 lg:py-4 rounded-lg lg:rounded-xl text-xs sm:text-sm lg:text-base transition-all hover:bg-[#f0c040] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-2 lg:gap-3 shadow-lg shadow-[#c9a227]/20 active:scale-[0.98]"
+                    className="w-full bg-[#c9a227] text-[#0a1628] font-black py-3 rounded-xl text-base transition-all hover:bg-[#f0c040] disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#c9a227]/20 active:scale-[0.98]"
                   >
-                    {bidding ? (
-                      <Spinner size="sm" />
-                    ) : (
+                    {bidding ? <Spinner size="sm" /> : (
                       <>
-                        <span className="text-lg sm:text-xl lg:text-2xl">↑</span>
-                        <span className="hidden sm:inline">Place Bid · {activeSession.currentBid + 10} pts</span>
-                        <span className="sm:hidden text-[10px]">{activeSession.currentBid + 10}</span>
+                        <span className="text-lg">↑</span>
+                        <span>Place Bid · {activeSession.currentBid + 10} pts</span>
                       </>
                     )}
                   </button>
-                  
-                  {/* Status message */}
                   {!canBid && activeSession && (
-                    <div className="mt-2 sm:mt-3 text-center">
-                      <p className="text-white/40 text-[8px] sm:text-[10px] lg:text-xs">
-                        {team?.playerCount >= 7 
-                          ? '⚠️ Squad is full (7/7 players)' 
-                          : `⚠️ Insufficient budget · Need ${activeSession.currentBid + 10} pts, have ${team?.budget} pts`
-                        }
-                      </p>
-                    </div>
+                    <p className="mt-2 text-center text-white/40 text-xs">
+                      {team?.playerCount >= 7
+                        ? '⚠️ Squad full (7/7)'
+                        : `⚠️ Need ${activeSession.currentBid + 10} pts · have ${team?.budget}`}
+                    </p>
                   )}
                 </div>
               </div>
 
               {/* Bid history */}
               {bidHistory.length > 0 && (
-                <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg lg:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-2xl max-h-[300px] sm:max-h-[400px] lg:max-h-[300px] overflow-hidden flex flex-col">
-                  <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2.5 sm:pb-3 border-b border-[#c9a227]/15">
-                    <svg className="w-4 sm:w-5 h-4 sm:h-5 text-[#c9a227] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <p className="text-white/70 text-[9px] sm:text-xs lg:text-sm font-bold uppercase tracking-wider">Bid History</p>
-                    <span className="ml-auto text-[#c9a227] text-[8px] sm:text-[10px] lg:text-xs font-semibold bg-[#c9a227]/15 px-2 py-1 rounded-md">
-                      {bidHistory.length} bids
-                    </span>
+                <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl overflow-hidden shadow-xl">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10">
+                    <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
+                    <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>
                   </div>
-                  <div className="space-y-1.5 overflow-y-auto pr-2">
+                  <div className="max-h-48 overflow-y-auto divide-y divide-[#c9a227]/5">
                     {bidHistory.map((b, i) => (
-                      <div 
-                        key={i} 
-                        className={`flex items-center justify-between py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-lg transition-all ${
-                          i === 0 
-                            ? 'bg-gradient-to-r from-[#c9a227]/20 to-[#c9a227]/10 border border-[#c9a227]/40' 
-                            : 'bg-[#0a1628]/60 border border-[#c9a227]/10 hover:border-[#c9a227]/25'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                          <span className={`text-[9px] sm:text-[10px] lg:text-xs font-mono font-bold tabular-nums w-4 sm:w-5 text-center ${
-                            i === 0 ? 'text-[#c9a227]' : 'text-white/40'
-                          }`}>
-                            #{bidHistory.length - i}
-                          </span>
-                          <span className={`text-[10px] sm:text-xs lg:text-sm font-semibold truncate ${
-                            i === 0 ? 'text-white' : 'text-white/70'
-                          }`}>
-                            {b.teamName}
-                          </span>
+                      <div key={i} className={`flex items-center justify-between px-4 py-2.5 ${i === 0 ? 'bg-[#c9a227]/8' : ''}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/25 text-xs font-mono w-6 text-right">#{bidHistory.length - i}</span>
+                          <span className={`text-sm font-semibold ${i === 0 ? 'text-white' : 'text-white/60'}`}>{b.teamName}</span>
                         </div>
-                        <span className={`font-black text-[10px] sm:text-xs lg:text-sm tabular-nums ml-1.5 sm:ml-2 shrink-0 ${
-                          i === 0 ? 'text-[#c9a227]' : 'text-white/60'
-                        }`}>
-                          {b.amount}
-                        </span>
+                        <span className={`text-sm font-black tabular-nums ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>{b.amount}</span>
                       </div>
                     ))}
                   </div>
@@ -276,47 +292,52 @@ export default function CaptainDashboard() {
               )}
             </>
           ) : (
-            <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-lg lg:rounded-2xl flex flex-col items-center justify-center p-6 sm:p-8 lg:p-12 text-center min-h-[300px] sm:min-h-[400px] h-fit">
-              <div className="w-14 sm:w-16 lg:w-20 h-14 sm:h-16 lg:h-20 rounded-full bg-[#c9a227]/5 flex items-center justify-center mb-3 sm:mb-4">
-                <span className="text-2xl sm:text-3xl lg:text-4xl">⏳</span>
+            <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/10 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
+              <div className="w-20 h-20 rounded-full bg-[#c9a227]/5 border border-[#c9a227]/10 flex items-center justify-center mb-4">
+                <span className="text-4xl">⏳</span>
               </div>
-              <p className="text-white/60 text-base sm:text-lg lg:text-lg font-semibold mb-1 sm:mb-2">Waiting for Auction</p>
-              <p className="text-white/30 text-xs sm:text-sm">The next player will appear here shortly</p>
+              <p className="text-white/60 text-xl font-bold mb-2">Waiting for Auction</p>
+              <p className="text-white/25 text-sm">The next player will appear here</p>
             </div>
           )}
         </div>
 
-        {/* Squad panel */}
-        <div className={`lg:w-80 flex flex-col gap-3 sm:gap-4 h-fit ${tab !== 'squad' ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg lg:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-2xl">
+        {/* ── Squad panel ── */}
+        <div className={`lg:w-72 flex flex-col gap-4 ${tab !== 'squad' ? 'hidden lg:flex' : 'flex'}`}>
+
+          {/* Budget card */}
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-4 shadow-xl">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-white/50 text-[9px] sm:text-xs uppercase tracking-wider font-bold">Budget</p>
-              <p className="text-[#c9a227] font-bold text-xs sm:text-sm">{team?.budget} pts</p>
+              <p className="text-white/40 text-xs uppercase tracking-wider font-bold">Budget</p>
+              <p className="text-[#c9a227] font-black text-base tabular-nums">{team?.budget} <span className="text-white/30 text-xs font-normal">pts</span></p>
             </div>
-            <div className="h-1.5 sm:h-2 bg-[#c9a227]/8 rounded-full overflow-hidden mt-2 sm:mt-3">
-              <div className="h-full bg-[#c9a227]/50 rounded-full transition-all" style={{ width: `${budgetPct}%` }} />
+            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-full bg-[#c9a227]/70 rounded-full transition-all duration-700" style={{ width: `${budgetPct}%` }} />
             </div>
-            <div className="flex justify-between text-[9px] sm:text-xs text-white/40 mt-1.5 sm:mt-2">
-              <span>Spent: {team?.pointsSpent || 0}</span>
+            <div className="flex justify-between text-xs text-white/30 mt-1.5">
+              <span>Spent: {team?.pointsSpent || 0} pts</span>
               <span>{budgetPct}%</span>
             </div>
           </div>
 
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg lg:rounded-2xl p-4 sm:p-5 lg:p-6 flex-1 flex flex-col shadow-2xl">
-            <p className="text-white/50 text-[9px] sm:text-xs uppercase tracking-wider font-bold mb-3 sm:mb-4">My Squad \u00b7 {team?.playerCount || 0}/7</p>
-            <div className="space-y-2 overflow-y-auto pr-1">
+          {/* Squad list */}
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-4 flex-1 flex flex-col shadow-xl">
+            <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-3">
+              My Squad · {team?.playerCount || 0}/7
+            </p>
+            <div className="space-y-2 overflow-y-auto">
               {team?.players?.map(p => (
-                <div key={p._id} className="flex items-center justify-between py-2.5 sm:py-3 px-2.5 sm:px-3 rounded-lg bg-[#0a1628]/40 border border-[#c9a227]/10 hover:border-[#c9a227]/20 transition-colors">
+                <div key={p._id} className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a1628]/50 border border-[#c9a227]/8">
                   <div className="flex-1 min-w-0">
-                    <p className="text-white/80 text-xs sm:text-sm font-semibold truncate">{p.name}</p>
-                    <div className="flex gap-1 mt-0.5 sm:mt-1">{p.skills?.slice(0,1).map(s => <SkillBadge key={s} skill={s} />)}</div>
+                    <p className="text-white/80 text-sm font-semibold truncate">{p.name}</p>
+                    <div className="flex gap-1 mt-0.5">{p.skills?.slice(0,1).map(s => <SkillBadge key={s} skill={s} />)}</div>
                   </div>
-                  <span className="text-[#c9a227] text-[9px] sm:text-xs font-bold ml-1.5 sm:ml-2 shrink-0">{p.soldPrice}</span>
+                  <span className="text-[#c9a227] text-xs font-bold ml-2 shrink-0">{p.soldPrice} pts</span>
                 </div>
               ))}
               {Array.from({ length: Math.max(0, 7 - (team?.players?.length || 0)) }).map((_, i) => (
-                <div key={i} className="py-2.5 sm:py-3 px-2.5 sm:px-3 rounded-lg bg-white/5 border border-white/5">
-                  <p className="text-white/20 text-[9px] sm:text-xs">Slot {(team?.players?.length || 0) + i + 1}</p>
+                <div key={i} className="py-2.5 px-3 rounded-xl border border-dashed border-white/8">
+                  <p className="text-white/15 text-xs">Slot {(team?.players?.length || 0) + i + 1}</p>
                 </div>
               ))}
             </div>

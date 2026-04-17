@@ -9,7 +9,7 @@ import Spinner from '@/components/Spinner';
 const SKILLS = ['Batsman', 'Bowler', 'All-rounder', 'Wicketkeeper', 'Fielder'];
 const emptyForm = { name: '', photo: '', skills: [], basePrice: 50 };
 
-function PhotoUpload({ value, onChange, token }) {
+function PhotoUpload({ value, onChange, token, toast }) {
   const [uploading, setUploading] = useState(false);
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
   const handleFile = async (e) => {
@@ -24,6 +24,7 @@ function PhotoUpload({ value, onChange, token }) {
     const data = await res.json();
     setUploading(false);
     if (data.url) onChange(data.url);
+    else toast('Upload failed', 'error');
   };
   return (
     <div className="space-y-2">
@@ -215,7 +216,7 @@ export default function PlayersPage() {
               </div>
               <div>
                 <label className="text-xs text-[#c9a227]/50 uppercase tracking-wider mb-1.5 block">Photo</label>
-                <PhotoUpload value={form.photo} onChange={url => setForm(f => ({ ...f, photo: url }))} token={token} />
+                <PhotoUpload value={form.photo} onChange={url => setForm(f => ({ ...f, photo: url }))} token={token} toast={toast} />
               </div>
               <div>
                 <label className="text-xs text-[#c9a227]/50 uppercase tracking-wider mb-2 block">Skills</label>

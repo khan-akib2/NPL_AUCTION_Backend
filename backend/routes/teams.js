@@ -32,7 +32,7 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 // PUT /api/teams/:id
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const team = await Team.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const team = await Team.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     if (!team) return res.status(404).json({ error: 'Team not found' });
     res.json({ team });
   } catch (e) {

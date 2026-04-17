@@ -11,6 +11,7 @@ export default function AudiencePage() {
   const [teams, setTeams] = useState([]);
   const [connected, setConnected] = useState(false);
   const [tab, setTab] = useState('auction');
+  const [viewerCount, setViewerCount] = useState(0);
 
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
@@ -51,9 +52,10 @@ export default function AudiencePage() {
   }, [connected]);
 
   useEffect(() => {
-    const s = io(BACKEND_URL, { path: '/api/socket', transports: ['polling'] });
+    const s = io(BACKEND_URL, { path: '/api/socket', transports: ['polling', 'websocket'] });
     s.on('connect', () => setConnected(true));
     s.on('disconnect', () => setConnected(false));
+    s.on('viewers:count', (count) => setViewerCount(count));
     s.on('auction:start', ({ session, player }) => {
       setActiveSession(session); setActivePlayer(player); setBidHistory([]);
       setTab('auction');
@@ -78,9 +80,18 @@ export default function AudiencePage() {
           <span className="text-[#c9a227]/20 hidden sm:block">·</span>
           <span className="text-white/25 text-xs hidden sm:block">Live</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${connected ? 'bg-[#c9a227] animate-pulse' : 'bg-white/20'}`} />
           <span className="text-white/30 text-xs">{connected ? 'Connected' : 'Connecting'}</span>
+          {viewerCount > 0 && (
+            <div className="flex items-center gap-2 bg-[#c9a227]/10 border border-[#c9a227]/20 rounded-full px-2.5 py-1 ml-1">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c9a227] opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#c9a227]" />
+              </span>
+              <span className="text-[#c9a227] text-xs font-bold tabular-nums leading-none">{viewerCount} watching live</span>
+            </div>
+          )}
         </div>
       </header>
 

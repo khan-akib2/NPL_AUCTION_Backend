@@ -56,6 +56,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Socket.IO
 const io = new Server(httpServer, {
+  path: '/api/socket',
   cors: {
     origin: allowedOrigins,
     methods: ['GET', 'POST'],
@@ -66,11 +67,29 @@ global._io = io;
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
-  socket.on('disconnect', () => console.log('Client disconnected:', socket.id));
+  // Broadcast updated viewer count to all clients
+  io.emit('viewers:count', io.engine.clientsCount);
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+    io.emit('viewers:count', io.engine.clientsCount);
+  });
 });
 
 // MongoDB
-await connectDB()
+await connectDB();
+
+// Keep-alive ping — prevents Render free tier from sleeping
+// Pings itself every 14 minutes
+const BACKEND_URL = process.env.BACKEND_URL;
+if (BACKEND_URL) {
+  setInterval(async () => {
+    try {
+      await fetch(`${BACKEND_URL}/health`);
+    } catch {
+      // silent — just a keep-alive
+    }
+  }, 14 * 60 * 1000);
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
