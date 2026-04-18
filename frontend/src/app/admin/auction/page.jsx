@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useApi } from '@/hooks/useApi';
 import { useSocket } from '@/context/SocketContext';
@@ -24,6 +24,8 @@ export default function AuctionControl() {
   const [mobileTab, setMobileTab] = useState('auction');
   const [timer, setTimer] = useState({ remaining: null, paused: false });
   const [timerDuration, setTimerDuration] = useState(30);
+  const [queueSearch, setQueueSearch] = useState('');
+  const [timerOpen, setTimerOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     const [pRes, sRes, tRes] = await Promise.all([
@@ -47,6 +49,19 @@ export default function AuctionControl() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Close timer dropdown on outside click
+  const timerDropdownRef = useRef(null);
+  useEffect(() => {
+    if (!timerOpen) return;
+    const handler = (e) => {
+      if (timerDropdownRef.current && !timerDropdownRef.current.contains(e.target)) {
+        setTimerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [timerOpen]);
 
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') loadData(); };
@@ -139,7 +154,10 @@ export default function AuctionControl() {
     else { toast('Resale triggered', 'success'); loadData(); }
   };
 
-  const available = players.filter(p => ['available','resold'].includes(p.status));
+  const available = players
+    .filter(p => ['available','resold'].includes(p.status))
+    .filter(p => !queueSearch.trim() || p.name.toLowerCase().includes(queueSearch.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const resaleTeams = teams.filter(t => t.budget < 50 && t.playerCount < 7);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
@@ -167,16 +185,27 @@ export default function AuctionControl() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 px-4 lg:px-6 pb-4 lg:pb-6 overflow-hidden">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 px-4 lg:px-6 pb-4 lg:pb-6 overflow-y-auto" style={{ overflowX: 'visible' }}>
 
         {/* Queue */}
-        <div className={`lg:col-span-3 flex flex-col min-h-0 ${mobileTab !== 'queue' ? 'hidden lg:flex' : 'flex'}`}>
+        <div className={`lg:col-span-3 flex flex-col min-h-0 overflow-visible ${mobileTab !== 'queue' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl flex flex-col h-full overflow-hidden shadow-2xl">
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
               <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
               <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
-              <span className="ml-2 text-white/20 text-xs">queue · {available.length} players</span>
+              <span className="ml-2 text-white/20 text-xs">queue · {queueSearch ? `${available.length} of ${players.filter(p => ['available','resold'].includes(p.status)).length}` : `${available.length} players`}</span>
+            </div>
+            <div className="px-2 pt-2 shrink-0">
+              <div className="relative">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/25 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <input
+                  value={queueSearch}
+                  onChange={e => setQueueSearch(e.target.value)}
+                  placeholder="Search players..."
+                  className="w-full bg-[#0a1628] border border-[#c9a227]/15 rounded-lg pl-7 pr-3 py-1.5 text-white text-xs placeholder-white/20 focus:outline-none focus:border-[#c9a227]/40 transition-colors"
+                />
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
               {available.map(p => (
@@ -191,21 +220,48 @@ export default function AuctionControl() {
               ))}
               {available.length === 0 && <p className="text-white/30 text-xs text-center py-8">No players available</p>}
             </div>
-            {/* Timer duration selector + start */}
-            <div className="p-3 border-t border-[#c9a227]/15 shrink-0 space-y-2">
-              <div className="flex items-center gap-2">
-                <label className="text-white/30 text-xs shrink-0">Timer</label>
-                <select value={timerDuration} onChange={e => setTimerDuration(Number(e.target.value))}
+          </div>
+          {/* Timer duration selector + start — outside card so dropdown isn't clipped */}
+          <div className="shrink-0 pt-2 space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-white/30 text-xs shrink-0">Timer</label>
+              {/* Custom dropdown */}
+              <div className="relative flex-1" ref={timerDropdownRef}>
+                <button
+                  type="button"
                   disabled={!!activeSession}
-                  className="flex-1 bg-[#0a1628] border border-[#c9a227]/20 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none disabled:opacity-40">
-                  {[15, 20, 30, 45, 60].map(v => <option key={v} value={v}>{v}s</option>)}
-                </select>
+                  onClick={() => setTimerOpen(o => !o)}
+                  className="w-full flex items-center justify-between bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg px-3 py-1.5 text-white text-xs disabled:opacity-40 hover:border-[#c9a227]/40 transition-colors"
+                >
+                  <span>{timerDuration}s</span>
+                  <svg className={`w-3 h-3 text-white/40 transition-transform ${timerOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {timerOpen && !activeSession && (
+                  <div className="absolute top-full mt-1 left-0 right-0 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg overflow-hidden shadow-xl z-50">
+                    {[15, 20, 30, 45, 60].map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => { setTimerDuration(v); setTimerOpen(false); }}
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                          timerDuration === v
+                            ? 'bg-[#c9a227]/15 text-[#c9a227] font-semibold'
+                            : 'text-white/60 hover:bg-[#c9a227]/8 hover:text-white'
+                        }`}
+                      >
+                        {v}s
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <button onClick={startBidding} disabled={!selectedPlayer || !!activeSession || actionLoading}
-                className="w-full bg-[#c9a227] text-[#0a1628] font-semibold py-2.5 rounded-lg text-sm hover:bg-[#f0c040] disabled:opacity-20 flex items-center justify-center gap-2">
-                {actionLoading ? <Spinner size="sm" /> : 'Start Bidding'}
-              </button>
             </div>
+            <button onClick={startBidding} disabled={!selectedPlayer || !!activeSession || actionLoading}
+              className="w-full bg-[#c9a227] text-[#0a1628] font-semibold py-2.5 rounded-lg text-sm hover:bg-[#f0c040] disabled:opacity-20 flex items-center justify-center gap-2">
+              {actionLoading ? <Spinner size="sm" /> : 'Start Bidding'}
+            </button>
           </div>
         </div>
 
