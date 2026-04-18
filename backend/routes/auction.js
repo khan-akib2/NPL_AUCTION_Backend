@@ -28,6 +28,10 @@ async function autoUnsold(sessionId) {
   } catch (e) { console.error('autoUnsold error:', e.message); }
 }
 
+export function startTimerResume(session) {
+  startTimer(session);
+}
+
 function startTimer(session) {
   clearTimer();
   _timerInterval = setInterval(async () => {

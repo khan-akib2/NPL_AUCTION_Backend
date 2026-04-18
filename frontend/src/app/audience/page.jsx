@@ -49,6 +49,7 @@ export default function AudiencePage() {
           setActiveSession(d.session);
           setActivePlayer(d.session.playerId);
           setBidHistory(d.session.bids?.slice().reverse() || []);
+          setTimer({ remaining: d.session.timerRemaining, paused: d.session.timerPaused });
         } else {
           setActiveSession(null);
           setActivePlayer(null);
@@ -60,7 +61,14 @@ export default function AudiencePage() {
   }, [connected, fetchTeams]);
 
   useEffect(() => {
-    const s = io(BACKEND_URL, { path: '/api/socket', transports: ['polling', 'websocket'] });
+    const s = io(BACKEND_URL, {
+      path: '/api/socket',
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+    });
     s.on('connect', () => setConnected(true));
     s.on('disconnect', () => setConnected(false));
     s.on('viewers:count', (count) => setViewerCount(count));

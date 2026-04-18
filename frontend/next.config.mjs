@@ -8,6 +8,11 @@ const nextConfig = {
   reactCompiler: true,
   images: {
     unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'npl-auction-backend.onrender.com' },
+      { protocol: 'http', hostname: 'localhost', port: '4000' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+    ],
   },
   turbopack: {
     root: __dirname,

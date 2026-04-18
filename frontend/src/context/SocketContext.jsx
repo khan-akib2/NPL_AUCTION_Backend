@@ -11,10 +11,11 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     const s = io(BACKEND_URL, {
       path: '/api/socket',
-      transports: ['polling', 'websocket'],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
-      timeout: 10000,
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     s.on('connect_error', (err) => {

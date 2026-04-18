@@ -60,7 +60,11 @@ const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 global._io = io;
@@ -77,6 +81,17 @@ io.on('connection', (socket) => {
 
 // MongoDB
 await connectDB();
+
+// Resume any active auction timer after server restart
+{
+  const { default: AuctionSession } = await import('./models/AuctionSession.js');
+  const active = await AuctionSession.findOne({ status: 'active' });
+  if (active && !active.timerPaused && active.timerRemaining > 0) {
+    const { startTimerResume } = await import('./routes/auction.js');
+    startTimerResume(active);
+    console.log(`Resumed timer for active session ${active._id} (${active.timerRemaining}s remaining)`);
+  }
+}
 
 // Keep-alive ping — prevents Render free tier from sleeping
 // Pings itself every 14 minutes
