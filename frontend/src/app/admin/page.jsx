@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useApi } from '@/hooks/useApi';
 import Spinner from '@/components/Spinner';
 
@@ -8,24 +8,24 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const [pRes, tRes] = await Promise.all([request('/api/players?pageSize=200'), request('/api/teams')]);
-      if (pRes && tRes) {
-        const p = pRes.players || [], t = tRes.teams || [];
-        setStats({
-          total: p.length,
-          sold: p.filter(x => x.status === 'sold').length,
-          unsold: p.filter(x => x.status === 'unsold').length,
-          available: p.filter(x => ['available','resold'].includes(x.status)).length,
-          teams: t.length,
-          spent: t.reduce((s, x) => s + x.pointsSpent, 0),
-        });
-      }
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const load = useCallback(async () => {
+    const [pRes, tRes] = await Promise.all([request('/api/players?pageSize=200'), request('/api/teams')]);
+    if (pRes && tRes) {
+      const p = pRes.players || [], t = tRes.teams || [];
+      setStats({
+        total: p.length,
+        sold: p.filter(x => x.status === 'sold').length,
+        unsold: p.filter(x => x.status === 'unsold').length,
+        available: p.filter(x => ['available','resold'].includes(x.status)).length,
+        teams: t.length,
+        spent: t.reduce((s, x) => s + x.pointsSpent, 0),
+      });
+    }
+    setLoading(false);
+  }, [request]);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load(); }, [load]);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
 
@@ -35,7 +35,6 @@ export default function AdminDashboard() {
     { label: 'Unsold', value: stats?.unsold },
     { label: 'Available', value: stats?.available },
     { label: 'Teams', value: stats?.teams },
-    { label: 'Points Spent', value: stats?.spent },
   ];
 
   return (
@@ -44,7 +43,7 @@ export default function AdminDashboard() {
         <h1 className="text-lg font-bold text-white">Dashboard</h1>
         <p className="text-[#c9a227]/40 text-xs mt-0.5">Live auction overview</p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
         {cards.map(c => (
           <div key={c.label} className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl p-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-12 h-12 bg-[#c9a227]/5 rounded-full -translate-y-4 translate-x-4" />

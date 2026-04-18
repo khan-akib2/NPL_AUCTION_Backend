@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "canvas-confetti": "^1.9.4",
     "jsonwebtoken": "^9.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",

@@ -3,8 +3,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/Toast";
 
 export const metadata = {
-  title: "NIT Sports Auction",
-  description: "NIT Inter-College Sports Auction Platform",
+  title: "APL Sports Auction",
+  description: "Alliance Premiere League Sports Auction Platform",
 };
 
 export const viewport = {

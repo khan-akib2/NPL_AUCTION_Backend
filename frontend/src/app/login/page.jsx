@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
+import Image from 'next/image';
 import Spinner from '@/components/Spinner';
 import Logo from '@/components/Logo';
 
@@ -41,15 +42,15 @@ export default function LoginPage() {
 
       {/* Left branding panel — desktop only */}
       <div className="hidden lg:flex flex-col w-[45%] bg-[#0d1e3a] border-r border-[#c9a227]/20 p-10 relative overflow-hidden">
-        <img src="/NPL.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none" />
+        <Image src="/NPL.png" alt="" fill className="object-cover opacity-15 pointer-events-none" />
         <div className="absolute inset-0 bg-[#0d1e3a]/50 pointer-events-none" />
 
         {/* Top */}
         <div className="relative flex items-center gap-3 mb-auto">
           <Logo size="md" className="rounded-xl" />
           <div>
-            <div className="text-[#c9a227] font-bold tracking-widest text-sm uppercase">NIT Sports Auction</div>
-            <div className="text-white/40 text-xs">Inter-College Sports Event</div>
+            <div className="text-[#c9a227] font-bold tracking-widest text-sm uppercase">APL Sports Auction</div>
+            <div className="text-white/40 text-xs">Alliance Premiere League</div>
           </div>
         </div>
 
@@ -59,7 +60,7 @@ export default function LoginPage() {
             LIVE<br/>AUCTION
           </div>
           <p className="text-white/50 text-sm leading-relaxed mb-6 max-w-xs">
-            Real-time player bidding for NIT's inter-college sports championship.
+            Real-time player bidding for APL&apos;s Alliance Premiere League championship.
           </p>
           <div className="flex gap-6">
             {[['8','Teams'],['56','Players'],['1000','Points']].map(([val, label]) => (
@@ -83,22 +84,21 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
         {/* Background image — mobile only */}
         <div className="lg:hidden absolute inset-0 pointer-events-none">
-          <img src="/NPL.png" alt="" className="w-full h-full object-cover opacity-[0.07]" />
+          <Image src="/NPL.png" alt="" fill className="w-full h-full object-cover opacity-[0.07]" />
           <div className="absolute inset-0 bg-[#0a1628]/75" />
         </div>
 
         {/* Mobile logo */}
         <div className="lg:hidden flex flex-col items-center mb-8 relative z-10">
           <Logo size="lg" className="rounded-2xl mb-3" />
-          <div className="text-white font-bold text-lg">NIT Sports Auction</div>
-          <div className="text-white/30 text-xs mt-0.5">Inter-College Sports Event</div>
+          <div className="text-white font-bold text-lg">APL Sports Auction</div>
+          <div className="text-white/30 text-xs mt-0.5">Alliance Premiere League</div>
         </div>
 
         <div className="w-full max-w-sm relative z-10">
           <div className="mb-7">
             <h2 className="text-2xl font-bold text-white">Sign in</h2>
-            <p className="text-white/30 text-sm mt-1">Enter your credentials to continue</p>
-          </div>
+            <p className="text-white/30 text-sm mt-1">Enter your credentials to continue</p>          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

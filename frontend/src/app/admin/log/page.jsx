@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useApi } from '@/hooks/useApi';
 import Spinner from '@/components/Spinner';
 
@@ -8,14 +8,14 @@ export default function AuctionLogPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const res = await request('/api/auction/log?pageSize=500');
-      if (res) setLogs(res.logs || []);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const load = useCallback(async () => {
+    const res = await request('/api/auction/log?pageSize=500');
+    if (res) setLogs(res.logs || []);
+    setLoading(false);
+  }, [request]);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="flex flex-col min-h-screen lg:h-[calc(100vh-48px)]">

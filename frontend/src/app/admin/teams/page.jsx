@@ -62,6 +62,8 @@ export default function TeamsPage() {
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm }
 
   const load = async () => {
     setLoading(true);
@@ -74,6 +76,7 @@ export default function TeamsPage() {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   const openAdd = () => { setForm(emptyForm); setEditId(null); setShowForm(true); };
@@ -96,11 +99,30 @@ export default function TeamsPage() {
     load();
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this team? This will unlink the captain.')) return;
-    const res = await request(`/api/teams/${id}`, { method: 'DELETE' });
-    if (res?.error) toast(res.error, 'error');
-    else { toast('Team deleted', 'success'); load(); }
+  const handleRemovePlayer = (teamId, playerId, playerName, refundAmt) => {
+    setConfirmModal({
+      title: 'Remove Player',
+      message: `Remove ${playerName} from team? They will go back to the resold queue and ${refundAmt} pts will be refunded.`,
+      onConfirm: async () => {
+        setConfirmModal(null);
+        const res = await request(`/api/teams/${teamId}/remove-player/${playerId}`, { method: 'POST' });
+        if (res?.error) toast(res.error, 'error');
+        else { toast(`${playerName} removed — ${res.refund} pts refunded`, 'success'); load(); }
+      },
+    });
+  };
+
+  const handleDelete = (id) => {
+    setConfirmModal({
+      title: 'Delete Team',
+      message: 'Delete this team? This will unlink the captain.',
+      onConfirm: async () => {
+        setConfirmModal(null);
+        const res = await request(`/api/teams/${id}`, { method: 'DELETE' });
+        if (res?.error) toast(res.error, 'error');
+        else { toast('Team deleted', 'success'); load(); }
+      },
+    });
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
@@ -183,9 +205,16 @@ export default function TeamsPage() {
                           <p className="text-white/30 text-xs text-center py-3">No players yet</p>
                         )}
                         {team.players?.map(p => (
-                          <div key={p._id} className="flex items-center justify-between bg-[#0d1e3a] rounded-lg px-3 py-2">
-                            <span className="text-white/60 text-xs">{p.name}</span>
-                            <span className="text-white/35 text-xs">{p.soldPrice} pts</span>
+                          <div key={p._id} className="flex items-center justify-between bg-[#0a1628] rounded-lg px-3 py-2 gap-2">
+                            <div className="flex-1 min-w-0">
+                              <span className="text-white/70 text-xs font-medium truncate block">{p.name}</span>
+                              <span className="text-[#c9a227]/50 text-[10px]">{p.soldPrice} pts</span>
+                            </div>
+                            <button
+                              onClick={() => handleRemovePlayer(team._id, p._id, p.name, p.soldPrice)}
+                              className="shrink-0 text-[10px] text-red-400/60 hover:text-red-400 border border-red-400/20 hover:border-red-400/50 px-2 py-1 rounded-md transition-colors">
+                              Remove
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -244,6 +273,26 @@ export default function TeamsPage() {
                 disabled={saving}
                 className="flex-1 bg-[#c9a227] text-[#0a1628] font-semibold py-2.5 rounded-lg text-sm hover:bg-[#f0c040] disabled:opacity-40 flex items-center justify-center gap-2">
                 {saving ? <Spinner size="sm" /> : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-6 w-full max-w-sm">
+            <h2 className="text-base font-semibold text-white mb-2">{confirmModal.title}</h2>
+            <p className="text-white/50 text-sm mb-6">{confirmModal.message}</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)}
+                className="flex-1 bg-[#0a1628] border border-[#c9a227]/15 text-white/50 py-2.5 rounded-lg text-sm hover:text-white transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmModal.onConfirm}
+                className="flex-1 bg-red-600/90 text-white font-medium py-2.5 rounded-lg text-sm hover:bg-red-600 transition-colors">
+                Confirm
               </button>
             </div>
           </div>

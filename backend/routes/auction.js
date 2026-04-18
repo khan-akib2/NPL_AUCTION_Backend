@@ -8,6 +8,41 @@ import { authMiddleware, adminOnly, captainOnly } from '../lib/auth.js';
 const router = Router();
 const getIO = () => global._io;
 
+// Server-side timer — one interval per active session
+let _timerInterval = null;
+
+function clearTimer() {
+  if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+}
+
+async function autoUnsold(sessionId) {
+  clearTimer();
+  try {
+    const session = await AuctionSession.findById(sessionId);
+    if (!session || session.status !== 'active') return;
+    session.status = 'closed'; session.endedAt = new Date(); await session.save();
+    const player = await Player.findByIdAndUpdate(session.playerId, { status: 'unsold' }, { returnDocument: 'after' });
+    await AuctionLog.create({ playerId: session.playerId, action: 'unsold', amount: 0 });
+    const io = getIO();
+    if (io) io.emit('auction:unsold', { player, session });
+  } catch (e) { console.error('autoUnsold error:', e.message); }
+}
+
+function startTimer(session) {
+  clearTimer();
+  _timerInterval = setInterval(async () => {
+    try {
+      const s = await AuctionSession.findById(session._id);
+      if (!s || s.status !== 'active' || s.timerPaused) return;
+      s.timerRemaining = Math.max(0, s.timerRemaining - 1);
+      await s.save();
+      const io = getIO();
+      if (io) io.emit('auction:timer', { remaining: s.timerRemaining, paused: false });
+      if (s.timerRemaining <= 0) await autoUnsold(s._id);
+    } catch (e) { console.error('timer tick error:', e.message); }
+  }, 1000);
+}
+
 // GET /api/auction/active
 router.get('/active', authMiddleware, async (req, res) => {
   try {
@@ -33,16 +68,21 @@ router.get('/active-public', async (_req, res) => {
 // POST /api/auction/start
 router.post('/start', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const { playerId } = req.body;
+    const { playerId, timerDuration = 30 } = req.body;
     await AuctionSession.updateMany({ status: 'active' }, { status: 'closed', endedAt: new Date() });
+    clearTimer();
     const player = await Player.findById(playerId);
     if (!player) return res.status(404).json({ error: 'Player not found' });
     if (!['available', 'resold'].includes(player.status))
       return res.status(400).json({ error: 'Player not available' });
 
-    const session = await AuctionSession.create({ playerId, currentBid: player.basePrice, status: 'active' });
+    const session = await AuctionSession.create({
+      playerId, currentBid: player.basePrice, status: 'active',
+      timerDuration, timerRemaining: timerDuration, timerPaused: false,
+    });
     const io = getIO();
     if (io) io.emit('auction:start', { session, player });
+    startTimer(session);
     res.status(201).json({ session, player });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -68,11 +108,17 @@ router.post('/bid', authMiddleware, captainOnly, async (req, res) => {
     session.currentHighestBidder = team._id;
     session.currentHighestBidderName = team.name;
     session.bids.push({ teamId: team._id, teamName: team.name, amount: newBid });
+    // Reset timer on each bid
+    session.timerRemaining = session.timerDuration;
+    session.timerPaused = false;
     await session.save();
     await AuctionLog.create({ playerId: session.playerId, teamId: team._id, action: 'bid', amount: newBid });
 
     const io = getIO();
-    if (io) io.emit('auction:bid_update', { sessionId: session._id, currentBid: newBid, bidderTeamName: team.name, bidderTeamId: team._id });
+    if (io) {
+      io.emit('auction:bid_update', { sessionId: session._id, currentBid: newBid, bidderTeamName: team.name, bidderTeamId: team._id });
+      io.emit('auction:timer', { remaining: session.timerRemaining, paused: false });
+    }
     res.json({ session });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -86,7 +132,7 @@ router.post('/sold', authMiddleware, adminOnly, async (req, res) => {
     if (!session.currentHighestBidder) return res.status(400).json({ error: 'No bids placed' });
 
     session.status = 'closed'; session.endedAt = new Date(); await session.save();
-
+    clearTimer();
     const player = await Player.findByIdAndUpdate(session.playerId,
       { status: 'sold', soldTo: session.currentHighestBidder, soldPrice: session.currentBid }, { returnDocument: 'after' });
     const team = await Team.findByIdAndUpdate(session.currentHighestBidder,
@@ -108,12 +154,39 @@ router.post('/unsold', authMiddleware, adminOnly, async (req, res) => {
     if (!session || session.status !== 'active') return res.status(400).json({ error: 'No active auction' });
 
     session.status = 'closed'; session.endedAt = new Date(); await session.save();
+    clearTimer();
     const player = await Player.findByIdAndUpdate(session.playerId, { status: 'unsold' }, { returnDocument: 'after' });
     await AuctionLog.create({ playerId: session.playerId, action: 'unsold', amount: 0 });
 
     const io = getIO();
     if (io) io.emit('auction:unsold', { player, session });
     res.json({ player, session });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/auction/timer/pause
+router.post('/timer/pause', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const session = await AuctionSession.findOne({ status: 'active' });
+    if (!session) return res.status(400).json({ error: 'No active auction' });
+    session.timerPaused = true; await session.save();
+    const io = getIO();
+    if (io) io.emit('auction:timer', { remaining: session.timerRemaining, paused: true });
+    res.json({ remaining: session.timerRemaining, paused: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/auction/timer/resume
+router.post('/timer/resume', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const session = await AuctionSession.findOne({ status: 'active' });
+    if (!session) return res.status(400).json({ error: 'No active auction' });
+    session.timerPaused = false; await session.save();
+    // Restart interval if not running
+    if (!_timerInterval) startTimer(session);
+    const io = getIO();
+    if (io) io.emit('auction:timer', { remaining: session.timerRemaining, paused: false });
+    res.json({ remaining: session.timerRemaining, paused: false });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

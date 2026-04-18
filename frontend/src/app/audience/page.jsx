@@ -1,10 +1,17 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
+import Image from 'next/image';
 import SkillBadge from '@/components/SkillBadge';
 import Logo from '@/components/Logo';
+import AuctionTimer from '@/components/AuctionTimer';
+import { playBidSound, playSoldSound, playUnsoldSound, playTimerUrgentSound } from '@/lib/sounds';
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export default function AudiencePage() {
+  const router = useRouter();
   const [activePlayer, setActivePlayer] = useState(null);
   const [activeSession, setActiveSession] = useState(null);
   const [bidHistory, setBidHistory] = useState([]);
@@ -12,11 +19,11 @@ export default function AudiencePage() {
   const [connected, setConnected] = useState(false);
   const [tab, setTab] = useState('auction');
   const [viewerCount, setViewerCount] = useState(0);
+  const [timer, setTimer] = useState({ remaining: null, paused: false });
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-
-  const fetchTeams = () =>
-    fetch(`${BACKEND_URL}/api/teams-public`).then(r => r.json()).then(d => setTeams(d.teams || []));
+  const fetchTeams = useCallback(() =>
+    fetch(`${BACKEND_URL}/api/teams-public`).then(r => r.json()).then(d => setTeams(d.teams || [])),
+  []);
 
   useEffect(() => {
     Promise.all([
@@ -27,6 +34,7 @@ export default function AudiencePage() {
         setActiveSession(d.session);
         setActivePlayer(d.session.playerId);
         setBidHistory(d.session.bids?.slice().reverse() || []);
+        setTimer({ remaining: d.session.timerRemaining, paused: d.session.timerPaused });
       }
     });
 
@@ -49,7 +57,7 @@ export default function AudiencePage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [connected]);
+  }, [connected, fetchTeams]);
 
   useEffect(() => {
     const s = io(BACKEND_URL, { path: '/api/socket', transports: ['polling', 'websocket'] });
@@ -58,17 +66,31 @@ export default function AudiencePage() {
     s.on('viewers:count', (count) => setViewerCount(count));
     s.on('auction:start', ({ session, player }) => {
       setActiveSession(session); setActivePlayer(player); setBidHistory([]);
+      setTimer({ remaining: session.timerRemaining, paused: false });
       setTab('auction');
     });
     s.on('auction:bid_update', (data) => {
       setActiveSession(prev => prev ? { ...prev, currentBid: data.currentBid, currentHighestBidderName: data.bidderTeamName } : prev);
       setBidHistory(prev => [{ teamName: data.bidderTeamName, amount: data.currentBid }, ...prev]);
+      playBidSound();
     });
-    s.on('auction:sold', () => { setActiveSession(null); setActivePlayer(null); setBidHistory([]); fetchTeams(); });
-    s.on('auction:unsold', () => { setActiveSession(null); setActivePlayer(null); setBidHistory([]); });
+    s.on('auction:timer', (data) => {
+      setTimer(data);
+      if (!data.paused && data.remaining <= 5 && data.remaining > 0) playTimerUrgentSound();
+    });
+    s.on('auction:sold', () => {
+      setActiveSession(null); setActivePlayer(null); setBidHistory([]);
+      setTimer({ remaining: null, paused: false });
+      playSoldSound();
+      import('canvas-confetti').then(({ default: confetti }) => {
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.55 }, colors: ['#c9a227', '#f0c040', '#ffffff', '#ffd700'] });
+      });
+      fetchTeams();
+    });
+    s.on('auction:unsold', () => { setActiveSession(null); setActivePlayer(null); setBidHistory([]); setTimer({ remaining: null, paused: false }); playUnsoldSound(); });
     s.on('auction:resale', () => fetchTeams());
     return () => s.disconnect();
-  }, []);
+  }, [fetchTeams]);
 
   return (
     <div className="min-h-screen bg-[#0a1628] text-white flex flex-col">
@@ -76,7 +98,7 @@ export default function AudiencePage() {
       <header className="bg-[#0d1e3a] border-b border-[#c9a227]/20 px-4 lg:px-8 h-12 lg:h-14 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size="sm" className="rounded-xl w-7 h-7" />
-          <span className="text-[#c9a227] font-bold text-xs tracking-widest uppercase">NIT Auction</span>
+          <span className="text-[#c9a227] font-bold text-xs tracking-widest uppercase">APL Auction</span>
           <span className="text-[#c9a227]/20 hidden sm:block">·</span>
           <span className="text-white/25 text-xs hidden sm:block">Live</span>
         </div>
@@ -119,15 +141,15 @@ export default function AudiencePage() {
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '420px', height: '55vh', maxHeight: '600px' }}>
                     {activePlayer.photo ? (
                       <>
-                        <img src={activePlayer.photo} alt=""
-                          className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 pointer-events-none" />
-                        <img src={activePlayer.photo} alt={activePlayer.name}
-                          className="absolute inset-0 w-full h-full object-cover"
+                        <Image src={activePlayer.photo} alt="" fill unoptimized
+                          className="absolute inset-0 object-cover scale-110 blur-xl opacity-40 pointer-events-none" />
+                        <Image src={activePlayer.photo} alt={activePlayer.name} fill unoptimized
+                          className="absolute inset-0 object-cover"
                           style={{ objectPosition: '50% 20%' }} />
                       </>
                     ) : (
                       <div className="absolute inset-0 bg-[#0d1e3a] flex items-center justify-center">
-                        <span className="text-8xl text-[#c9a227]/20">👤</span>
+                        <svg className="w-16 h-16 text-[#c9a227]/15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                       </div>
                     )}
                     <div className="absolute inset-0"
@@ -161,6 +183,11 @@ export default function AudiencePage() {
 
                   {/* Current bid strip */}
                   <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
+                    {timer.remaining !== null && (
+                      <div className="px-5 pt-3">
+                        <AuctionTimer remaining={timer.remaining} paused={timer.paused} size="md" />
+                      </div>
+                    )}
                     <div className="flex items-center justify-between px-5 py-4">
                       <div>
                         <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-0.5">Current Bid</p>
@@ -212,7 +239,7 @@ export default function AudiencePage() {
             ) : (
               <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
                 <div className="w-20 h-20 rounded-full bg-[#c9a227]/5 border border-[#c9a227]/10 flex items-center justify-center mb-4">
-                  <span className="text-4xl">⏳</span>
+                  <svg className="w-7 h-7 text-[#c9a227]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </div>
                 <p className="text-white/60 text-xl font-bold mb-2">Waiting for Auction</p>
                 <p className="text-white/25 text-sm">The next player will appear here shortly</p>
@@ -251,6 +278,16 @@ export default function AudiencePage() {
           </div>
         )}
       </div>
+
+      {/* Floating back button */}
+      <button
+        onClick={() => router.push('/')}
+        className="fixed bottom-5 left-5 flex items-center gap-2 bg-[#0d1e3a] border border-[#c9a227]/30 hover:border-[#c9a227]/60 text-white/60 hover:text-white rounded-full px-4 py-2 shadow-lg transition-all z-50"
+        aria-label="Back to home"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        <span className="text-xs font-medium">Home</span>
+      </button>
     </div>
   );
 }

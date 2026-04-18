@@ -28,7 +28,7 @@ export default function AdminSidebar() {
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0d1e3a] border-b border-[#c9a227]/20 flex items-center justify-between px-4 h-12">        <div className="flex items-center gap-2">
           <Logo size="sm" className="rounded-xl" />
-          <span className="text-[#c9a227] font-bold tracking-widest text-xs uppercase">NIT Auction</span>
+          <span className="text-[#c9a227] font-bold tracking-widest text-xs uppercase">APL Auction</span>
         </div>
         <button onClick={() => setOpen(!open)} className="text-[#c9a227]/60 hover:text-[#c9a227] transition-colors p-1">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -50,7 +50,7 @@ export default function AdminSidebar() {
           <div className="flex items-center gap-2.5">
             <Logo size="sm" className="rounded-xl" />
             <div>
-              <div className="text-[#c9a227] font-bold text-xs tracking-widest uppercase">NIT Auction</div>
+              <div className="text-[#c9a227] font-bold text-xs tracking-widest uppercase">APL Auction</div>
               <div className="text-[#c9a227]/30 text-[10px] tracking-widest uppercase">Admin Panel</div>
             </div>
           </div>

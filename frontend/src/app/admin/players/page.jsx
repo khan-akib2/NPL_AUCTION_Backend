@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
@@ -30,8 +31,8 @@ function PhotoUpload({ value, onChange, token, toast }) {
     <div className="space-y-2">
       {value && (
         <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#c9a227]/20">
-          <img src={value} alt="preview" className="w-full h-full object-cover" />
-          <button type="button" onClick={() => onChange('')} className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-white/60 hover:text-white text-xs flex items-center justify-center">✕</button>
+          <Image src={value} alt="preview" fill unoptimized className="object-cover" />
+          <button type="button" onClick={() => onChange('')} className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-white/60 hover:text-white text-xs flex items-center justify-center">×</button>
         </div>
       )}
       {/* Use a label wrapping the input — works reliably on iOS/Android without JS click() */}
@@ -65,6 +66,7 @@ export default function PlayersPage() {
     if (res) setPlayers(res.players || []);
     setLoading(false);
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   const filtered = players
@@ -111,7 +113,9 @@ export default function PlayersPage() {
       {/* Filters — horizontal scroll on mobile */}
       <div className="flex gap-2 px-4 lg:px-6 py-3 border-b border-[#c9a227]/15 shrink-0 overflow-x-auto">
         <div className="relative shrink-0">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 text-xs pointer-events-none">🔍</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </span>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -149,7 +153,7 @@ export default function PlayersPage() {
                   {filtered.map(p => (
                     <div key={p._id} className="flex items-center gap-3 px-4 py-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#0d1e3a] border border-[#c9a227]/15 shrink-0">
-                        {p.photo ? <img src={p.photo} alt={p.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">?</div>}
+                        {p.photo ? <Image src={p.photo} alt={p.name} fill unoptimized className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">?</div>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-white text-sm font-medium truncate">{p.name}</div>

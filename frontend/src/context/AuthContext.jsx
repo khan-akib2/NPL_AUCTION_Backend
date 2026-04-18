@@ -17,8 +17,10 @@ export function AuthProvider({ children }) {
     const t = storage?.getItem('token');
     const u = storage?.getItem('user');
     if (t && u) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setToken(t);
       setUser(JSON.parse(u));
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
     setLoading(false);
   }, []);

@@ -5,6 +5,19 @@ import { authMiddleware, adminOnly } from '../lib/auth.js';
 
 const router = Router();
 
+// GET /api/players/public — no auth required, shows all players with basic info
+router.get('/public', async (_req, res) => {
+  try {
+    const players = await Player.find()
+      .populate('soldTo', 'name')
+      .select('name photo skills basePrice status soldTo soldPrice')
+      .sort({ name: 1 });
+    res.json({ players });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/players
 router.get('/', authMiddleware, async (req, res) => {
   try {

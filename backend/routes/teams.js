@@ -51,4 +51,42 @@ router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// POST /api/teams/:teamId/remove-player/:playerId
+// Admin removes a specific player from a team — player goes back to resold queue
+import Player from '../models/Player.js';
+import AuctionLog from '../models/AuctionLog.js';
+
+router.post('/:teamId/remove-player/:playerId', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { teamId, playerId } = req.params;
+    const team = await Team.findById(teamId);
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    const player = await Player.findById(playerId);
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    if (player.soldTo?.toString() !== teamId)
+      return res.status(400).json({ error: 'Player does not belong to this team' });
+
+    const refund = player.soldPrice || 0;
+
+    // Remove player from team, refund budget
+    await Team.findByIdAndUpdate(teamId, {
+      $pull: { players: player._id },
+      $inc: { budget: refund, pointsSpent: -refund, playerCount: -1 },
+    });
+
+    // Mark player as resold
+    await Player.findByIdAndUpdate(playerId, { status: 'resold', soldTo: null, soldPrice: null });
+
+    await AuctionLog.create({ playerId, teamId, action: 'resale_triggered', amount: refund });
+
+    const io = global._io;
+    if (io) io.emit('auction:resale', { player, team });
+
+    res.json({ success: true, refund });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;

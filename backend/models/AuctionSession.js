@@ -16,6 +16,9 @@ const AuctionSessionSchema = new mongoose.Schema({
   currentHighestBidderName: { type: String, default: null },
   bids: [BidSchema],
   status: { type: String, enum: ['active', 'closed'], default: 'active' },
+  timerDuration: { type: Number, default: 30 },
+  timerRemaining: { type: Number, default: 30 },
+  timerPaused: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export default mongoose.models.AuctionSession || mongoose.model('AuctionSession', AuctionSessionSchema);

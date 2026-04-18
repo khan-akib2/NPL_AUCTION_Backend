@@ -21,6 +21,7 @@ export function SocketProvider({ children }) {
       console.warn('Socket connection failed:', err.message);
     });
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(s);
     return () => s.disconnect();
   }, []);

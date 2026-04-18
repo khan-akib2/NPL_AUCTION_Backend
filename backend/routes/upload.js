@@ -1,4 +1,4 @@
-import { Router, static as expressStatic } from 'express';
+import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
