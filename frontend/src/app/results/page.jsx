@@ -135,7 +135,6 @@ export default function ResultsPage() {
                             <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-[#0a1628] border border-white/5 shrink-0">
                               <ResultPhoto src={p.photo} alt={p.name} />
                             </div>
-                            </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-xs font-semibold truncate">{p.name}</p>
                               <div className="flex gap-1 mt-0.5">
