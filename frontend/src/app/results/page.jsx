@@ -8,6 +8,18 @@ import Spinner from '@/components/Spinner';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
+function ResultPhoto({ src, alt }) {
+  const [err, setErr] = useState(false);
+  if (!src || err) return (
+    <div className="w-full h-full flex items-center justify-center">
+      <svg className="w-4 h-4 text-white/15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    </div>
+  );
+  return <Image src={src} alt={alt} fill unoptimized className="object-cover" style={{ objectPosition: '50% 15%' }} onError={() => setErr(true)} />;
+}
+
 export default function ResultsPage() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,18 +132,9 @@ export default function ResultsPage() {
                           <div key={p._id}
                             className="flex items-center gap-3 bg-[#060f1e] border border-white/5 rounded-xl px-3 py-2.5">
                             {/* Photo */}
-                            <div className="w-9 h-9 rounded-lg overflow-hidden bg-[#0a1628] border border-white/5 shrink-0">
-                              {p.photo ? (
-                                <Image src={p.photo} alt={p.name} fill unoptimized
-                                  className="object-cover"
-                                  style={{ objectPosition: '50% 15%' }} />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <svg className="w-4 h-4 text-white/15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                  </svg>
-                                </div>
-                              )}
+                            <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-[#0a1628] border border-white/5 shrink-0">
+                              <ResultPhoto src={p.photo} alt={p.name} />
+                            </div>
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-xs font-semibold truncate">{p.name}</p>

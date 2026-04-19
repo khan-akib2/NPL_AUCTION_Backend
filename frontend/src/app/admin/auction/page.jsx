@@ -137,13 +137,15 @@ export default function AuctionControl() {
   };
 
   const pauseTimer = async () => {
+    setTimer(t => ({ ...t, paused: true }));
     const res = await request('/api/auction/timer/pause', { method: 'POST' });
-    if (res?.error) toast(res.error, 'error');
+    if (res?.error) { toast(res.error, 'error'); setTimer(t => ({ ...t, paused: false })); }
   };
 
   const resumeTimer = async () => {
+    setTimer(t => ({ ...t, paused: false }));
     const res = await request('/api/auction/timer/resume', { method: 'POST' });
-    if (res?.error) toast(res.error, 'error');
+    if (res?.error) { toast(res.error, 'error'); setTimer(t => ({ ...t, paused: true })); }
   };
 
   const triggerResale = async (teamId) => {
@@ -155,10 +157,10 @@ export default function AuctionControl() {
   };
 
   const available = players
-    .filter(p => ['available','resold'].includes(p.status))
+    .filter(p => ['available','resold','unsold'].includes(p.status))
     .filter(p => !queueSearch.trim() || p.name.toLowerCase().includes(queueSearch.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const resaleTeams = teams.filter(t => t.budget < 50 && t.playerCount < 7);
+  const resaleTeams = teams.filter(t => t.playerCount < 7 && t.players?.length > 0);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
 
@@ -215,7 +217,8 @@ export default function AuctionControl() {
                   }`}>
                   <div className="font-medium text-sm">{p.name}</div>
                   <div className="text-xs text-white/40 mt-0.5">{p.skills?.join(' · ')} · {p.basePrice}pts</div>
-                  {p.status === 'resold' && <span className="text-[10px] text-white/40 uppercase tracking-wider">Resold</span>}
+                  {p.status === 'resold' && <span className="text-[10px] text-orange-400/60 uppercase tracking-wider">Resold</span>}
+                  {p.status === 'unsold' && <span className="text-[10px] text-red-400/60 uppercase tracking-wider">Unsold</span>}
                 </button>
               ))}
               {available.length === 0 && <p className="text-white/30 text-xs text-center py-8">No players available</p>}
@@ -400,7 +403,7 @@ export default function AuctionControl() {
                   <div key={t._id} className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-white/70">{t.name}</p>
-                      <p className="text-xs text-white/40">{t.budget} pts</p>
+                      <p className="text-xs text-white/40">{t.budget} pts · {t.playerCount}/7</p>
                     </div>
                     <button onClick={() => triggerResale(t._id)}
                       className="text-xs bg-[#c9a227]/8 border border-[#c9a227]/20 text-white/50 hover:text-white px-3 py-1.5 rounded-lg transition-colors">

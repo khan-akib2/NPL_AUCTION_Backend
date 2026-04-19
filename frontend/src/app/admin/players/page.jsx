@@ -10,32 +10,51 @@ import Spinner from '@/components/Spinner';
 const SKILLS = ['Batsman', 'Bowler', 'All-rounder', 'Wicketkeeper', 'Fielder'];
 const emptyForm = { name: '', photo: '', skills: [], basePrice: 50 };
 
+function PlayerPhoto({ src, alt }) {
+  const [err, setErr] = useState(false);
+  if (!src || err) return (
+    <div className="w-full h-full flex items-center justify-center bg-[#0d1e3a]">
+      <svg className="w-5 h-5 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    </div>
+  );
+  return <Image src={src} alt={alt} fill unoptimized className="object-cover" onError={() => setErr(true)} />;
+}
+
 function PhotoUpload({ value, onChange, token, toast }) {
   const [uploading, setUploading] = useState(false);
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset input so same file can be re-selected
     e.target.value = '';
     setUploading(true);
     const fd = new FormData();
     fd.append('file', file);
-    const res = await fetch(`${BACKEND_URL}/api/upload`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+    const res = await fetch(`${BACKEND_URL}/api/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
     const data = await res.json();
     setUploading(false);
     if (data.url) onChange(data.url);
     else toast('Upload failed', 'error');
   };
+
   return (
     <div className="space-y-2">
       {value && (
         <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#c9a227]/20">
-          <Image src={value} alt="preview" fill unoptimized className="object-cover" />
-          <button type="button" onClick={() => onChange('')} className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-white/60 hover:text-white text-xs flex items-center justify-center">×</button>
+          <PlayerPhoto src={value} alt="preview" />
+          <button type="button" onClick={() => onChange('')}
+            className="absolute top-1 right-1 w-5 h-5 bg-black/70 rounded-full text-white/60 hover:text-white text-xs flex items-center justify-center">
+            ×
+          </button>
         </div>
       )}
-      {/* Use a label wrapping the input — works reliably on iOS/Android without JS click() */}
       <label className={`relative flex items-center justify-center gap-2 bg-[#c9a227]/8 border border-[#c9a227]/20 hover:bg-[#c9a227]/12 text-white/50 hover:text-white text-sm px-4 py-2.5 rounded-lg transition-colors w-full cursor-pointer ${uploading ? 'opacity-40 pointer-events-none' : ''}`}>
         {uploading ? <Spinner size="sm" /> : <>{value ? 'Change Photo' : 'Upload Photo'}</>}
         <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFile} disabled={uploading} />
@@ -72,7 +91,11 @@ export default function PlayersPage() {
   const filtered = players
     .filter(p => filter === 'all' || p.status === filter)
     .filter(p => !search.trim() || p.name.toLowerCase().includes(search.trim().toLowerCase()));
-  const toggleSkill = s => setForm(f => ({ ...f, skills: f.skills.includes(s) ? f.skills.filter(x => x !== s) : [...f.skills, s] }));
+
+  const toggleSkill = s => setForm(f => ({
+    ...f,
+    skills: f.skills.includes(s) ? f.skills.filter(x => x !== s) : [...f.skills, s],
+  }));
 
   const handleSave = async () => {
     if (!form.name.trim()) return toast('Name required', 'warning');
@@ -87,7 +110,12 @@ export default function PlayersPage() {
     load();
   };
 
-  const handleEdit = p => { setForm({ name: p.name, photo: p.photo || '', skills: p.skills || [], basePrice: p.basePrice }); setEditId(p._id); setShowForm(true); };
+  const handleEdit = p => {
+    setForm({ name: p.name, photo: p.photo || '', skills: p.skills || [], basePrice: p.basePrice });
+    setEditId(p._id);
+    setShowForm(true);
+  };
+
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
     const res = await request(`/api/players/${deleteConfirm}`, { method: 'DELETE' });
@@ -110,20 +138,18 @@ export default function PlayersPage() {
         </button>
       </div>
 
-      {/* Filters — horizontal scroll on mobile */}
+      {/* Filters */}
       <div className="flex gap-2 px-4 lg:px-6 py-3 border-b border-[#c9a227]/15 shrink-0 overflow-x-auto">
         <div className="relative shrink-0">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </span>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search players..."
-            className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg pl-7 pr-3 py-1.5 text-white text-xs focus:outline-none focus:border-[#c9a227]/40 placeholder-white/20 w-40"
-          />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search players..."
+            className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg pl-7 pr-3 py-1.5 text-white text-xs focus:outline-none focus:border-[#c9a227]/40 placeholder-white/20 w-40" />
         </div>
-        {['all','available','sold','unsold','resold'].map(f => (
+        {['all', 'available', 'sold', 'unsold', 'resold'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors whitespace-nowrap ${filter === f ? 'bg-[#c9a227]/15 text-[#c9a227] border border-[#c9a227]/20' : 'text-white/30 hover:text-white/60 bg-[#0d1e3a] border border-[#c9a227]/10'}`}>
             {f}
@@ -134,31 +160,30 @@ export default function PlayersPage() {
       {/* Content */}
       <div className="flex-1 overflow-hidden p-4 lg:p-6">
         <div className="h-full border border-[#c9a227]/20 rounded-xl overflow-hidden bg-[#060f1e] flex flex-col">
-          {/* iframe-style header bar */}
           <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
             <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
             <span className="ml-2 text-white/20 text-xs">players · {filtered.length} of {players.length}</span>
           </div>
-
-          {/* scrollable content */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center h-40"><Spinner size="lg" /></div>
             ) : (
               <>
-                {/* Mobile card list */}
+                {/* Mobile list */}
                 <div className="lg:hidden divide-y divide-[#c9a227]/10">
                   {filtered.map(p => (
                     <div key={p._id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-[#0d1e3a] border border-[#c9a227]/15 shrink-0">
-                        {p.photo ? <Image src={p.photo} alt={p.name} fill unoptimized className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">?</div>}
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-[#0d1e3a] border border-[#c9a227]/15 shrink-0">
+                        <PlayerPhoto src={p.photo} alt={p.name} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-white text-sm font-medium truncate">{p.name}</div>
-                        <div className="flex gap-1 mt-0.5 flex-wrap">{p.skills?.slice(0,2).map(s => <SkillBadge key={s} skill={s} />)}</div>
-                        <div className="text-white/30 text-xs mt-0.5 capitalize">{p.status} {p.soldTo?.name ? `· ${p.soldTo.name}` : ''} {p.soldPrice ? `· ${p.soldPrice}pts` : ''}</div>
+                        <div className="flex gap-1 mt-0.5 flex-wrap">{p.skills?.slice(0, 2).map(s => <SkillBadge key={s} skill={s} />)}</div>
+                        <div className="text-white/30 text-xs mt-0.5 capitalize">
+                          {p.status}{p.soldTo?.name ? ` · ${p.soldTo.name}` : ''}{p.soldPrice ? ` · ${p.soldPrice}pts` : ''}
+                        </div>
                       </div>
                       <div className="flex gap-3 shrink-0">
                         <button onClick={() => handleEdit(p)} className="text-white/30 hover:text-white text-xs">Edit</button>
@@ -202,7 +227,9 @@ export default function PlayersPage() {
                 </div>
               </>
             )}
-            {!loading && filtered.length === 0 && <p className="text-center text-white/30 py-16 text-sm">No players found</p>}
+            {!loading && filtered.length === 0 && (
+              <p className="text-center text-white/30 py-16 text-sm">No players found</p>
+            )}
           </div>
         </div>
       </div>
@@ -226,7 +253,7 @@ export default function PlayersPage() {
                 <label className="text-xs text-[#c9a227]/50 uppercase tracking-wider mb-2 block">Skills</label>
                 <div className="flex flex-wrap gap-2">
                   {SKILLS.map(s => (
-                    <button key={s} onClick={() => toggleSkill(s)}
+                    <button key={s} type="button" onClick={() => toggleSkill(s)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${form.skills.includes(s) ? 'bg-[#c9a227]/20 text-[#c9a227] border border-[#c9a227]/30' : 'bg-[#0a1628] text-white/30 border border-[#c9a227]/10 hover:text-white/60'}`}>
                       {s}
                     </button>
@@ -241,7 +268,9 @@ export default function PlayersPage() {
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setShowForm(false); setEditId(null); }}
-                className="flex-1 bg-[#0a1628] border border-[#c9a227]/15 text-white/50 py-2.5 rounded-lg text-sm hover:text-white transition-colors">Cancel</button>
+                className="flex-1 bg-[#0a1628] border border-[#c9a227]/15 text-white/50 py-2.5 rounded-lg text-sm hover:text-white transition-colors">
+                Cancel
+              </button>
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 bg-[#c9a227] text-[#0a1628] font-bold py-2.5 rounded-lg text-sm hover:bg-[#f0c040] disabled:opacity-40 flex items-center justify-center gap-2">
                 {saving ? <Spinner size="sm" /> : 'Save'}
@@ -251,12 +280,12 @@ export default function PlayersPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirm Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-6 w-full max-w-sm">
             <h2 className="text-lg font-semibold text-white mb-2">Delete this player?</h2>
-            <p className="text-white/50 text-sm mb-6">This action cannot be undone. The player will be permanently removed from the system.</p>
+            <p className="text-white/50 text-sm mb-6">This action cannot be undone.</p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)}
                 className="flex-1 bg-[#0a1628] border border-[#c9a227]/15 text-white/50 py-2.5 rounded-lg text-sm hover:text-white transition-colors">

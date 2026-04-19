@@ -78,7 +78,7 @@ export default function CaptainDashboard() {
       if (data.bidderTeamId !== team?._id?.toString()) toast(`Outbid — ${data.currentBid} pts`, 'warning');
     });
     socket.on('auction:sold', ({ player, team: soldTeam }) => {
-      if (soldTeam._id === team?._id?.toString()) {
+      if (soldTeam._id?.toString() === team?._id?.toString()) {
         toast(`Won: ${player.name}`, 'success');
         playSoldSound();
         // Confetti for winning team
@@ -93,6 +93,7 @@ export default function CaptainDashboard() {
       loadData();
     });
     socket.on('auction:unsold', () => { setActiveSession(null); setActivePlayer(null); setBidHistory([]); setTimer({ remaining: null, paused: false }); playUnsoldSound(); });
+    socket.on('auction:resale', () => { loadData(); });
     socket.on('auction:timer', (data) => {
       setTimer(data);
       if (!data.paused && data.remaining <= 5 && data.remaining > 0) playTimerUrgentSound();
@@ -105,6 +106,7 @@ export default function CaptainDashboard() {
       socket.off('auction:bid_update');
       socket.off('auction:sold');
       socket.off('auction:unsold');
+      socket.off('auction:resale');
       socket.off('auction:timer');
     };
   }, [socket, toast, team, loadData]);

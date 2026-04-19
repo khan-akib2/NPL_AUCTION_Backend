@@ -174,7 +174,7 @@ export default function TeamsPage() {
                       </div>
 
                       <div className="h-1 bg-[#c9a227]/8 rounded-full overflow-hidden mb-4">
-                        <div className="h-full bg-[#0d1e3a]0 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        <div className="h-full bg-[#c9a227]/50 rounded-full transition-all" style={{ width: `${pct}%` }} />
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-white/40 mb-4">

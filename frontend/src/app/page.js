@@ -56,26 +56,18 @@ function Navbar({ scrolled }) {
         {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-6 xl:gap-8">
             {[
-              { label: 'Home', href: '#hero', scroll: true },
-              { label: 'Auction', href: '/audience', scroll: false },
-              { label: 'Teams', href: '/teams', scroll: false },
-              { label: 'Players', href: '/players', scroll: false },
-              { label: 'Results', href: '/results', scroll: false },
+              { label: 'Home', href: '#hero' },
+              { label: 'Auction', href: '#live-auction' },
+              { label: 'Features', href: '#features' },
+              { label: 'How It Works', href: '#how-it-works' },
+              { label: 'Stats', href: '#stats' },
             ].map(item => (
-              item.scroll ? (
-                <a key={item.label} href={item.href}
-                  onClick={e => { e.preventDefault(); scrollTo(item.href); setOpen(false); }}
-                  className="text-white/40 hover:text-white text-sm font-medium transition-colors relative group cursor-pointer">
-                  {item.label}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-[#c9a227] group-hover:w-full transition-all duration-300" />
-                </a>
-              ) : (
-                <Link key={item.label} href={item.href}
-                  className="text-white/40 hover:text-white text-sm font-medium transition-colors relative group">
-                  {item.label}
-                  <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-[#c9a227] group-hover:w-full transition-all duration-300" />
-                </Link>
-              )
+              <a key={item.label} href={item.href}
+                onClick={e => { e.preventDefault(); scrollTo(item.href); }}
+                className="text-white/40 hover:text-white text-sm font-medium transition-colors relative group cursor-pointer">
+                {item.label}
+                <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-[#c9a227] group-hover:w-full transition-all duration-300" />
+              </a>
             ))}
           </div>
 
@@ -443,6 +435,7 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -451,7 +444,7 @@ export default function HomePage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
+    const fn = () => { setScrolled(window.scrollY > 20); setShowTop(window.scrollY > 400); };
     window.addEventListener('scroll', fn);
     return () => window.removeEventListener('scroll', fn);
   }, []);
@@ -466,6 +459,16 @@ export default function HomePage() {
       <StatsSection />
       <CTASection />
       <Footer />
+      {/* Back to top */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-6 right-6 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-[#c9a227] text-[#0a1628] shadow-lg shadow-[#c9a227]/30 transition-all duration-300 hover:bg-[#f0c040] hover:scale-110 ${showTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+        aria-label="Back to top"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
     </div>
   );
 }

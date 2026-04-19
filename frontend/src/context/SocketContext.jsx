@@ -11,7 +11,7 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     const s = io(BACKEND_URL, {
       path: '/api/socket',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

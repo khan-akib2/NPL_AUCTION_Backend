@@ -63,7 +63,7 @@ export default function AudiencePage() {
   useEffect(() => {
     const s = io(BACKEND_URL, {
       path: '/api/socket',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
@@ -150,10 +150,12 @@ export default function AudiencePage() {
                     {activePlayer.photo ? (
                       <>
                         <Image src={activePlayer.photo} alt="" fill unoptimized
-                          className="absolute inset-0 object-cover scale-110 blur-xl opacity-40 pointer-events-none" />
+                          className="absolute inset-0 object-cover scale-110 blur-xl opacity-40 pointer-events-none"
+                          onError={() => {}} />
                         <Image src={activePlayer.photo} alt={activePlayer.name} fill unoptimized
                           className="absolute inset-0 object-cover"
-                          style={{ objectPosition: '50% 20%' }} />
+                          style={{ objectPosition: '50% 20%' }}
+                          onError={(e) => { e.target.style.display = 'none'; }} />
                       </>
                     ) : (
                       <div className="absolute inset-0 bg-[#0d1e3a] flex items-center justify-center">

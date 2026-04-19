@@ -6,6 +6,21 @@ import Logo from '@/components/Logo';
 import SkillBadge from '@/components/SkillBadge';
 import Spinner from '@/components/Spinner';
 
+function PlayerPhoto({ src, alt }) {
+  const [err, setErr] = useState(false);
+  if (!src || err) return (
+    <div className="absolute inset-0 flex items-center justify-center bg-[#060f1e]">
+      <svg className="w-10 h-10 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+    </div>
+  );
+  return (
+    <>
+      <Image src={src} alt={alt} fill unoptimized className="absolute inset-0 object-cover" style={{ objectPosition: '50% 15%' }} onError={() => setErr(true)} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(10,22,40,0.95) 100%)' }} />
+    </>
+  );
+}
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 const STATUS_COLORS = {
@@ -147,13 +162,7 @@ export default function PlayersPage() {
                 {/* Photo */}
                 <div className="relative aspect-[3/4] bg-[#060f1e] overflow-hidden">
                   {p.photo ? (
-                    <>
-                      <Image src={p.photo} alt={p.name} fill unoptimized
-                        className="absolute inset-0 object-cover"
-                        style={{ objectPosition: '50% 15%' }} />
-                      <div className="absolute inset-0"
-                        style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(10,22,40,0.95) 100%)' }} />
-                    </>
+                    <PlayerPhoto src={p.photo} alt={p.name} />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <svg className="w-10 h-10 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>

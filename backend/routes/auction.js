@@ -77,7 +77,7 @@ router.post('/start', authMiddleware, adminOnly, async (req, res) => {
     clearTimer();
     const player = await Player.findById(playerId);
     if (!player) return res.status(404).json({ error: 'Player not found' });
-    if (!['available', 'resold'].includes(player.status))
+    if (!['available', 'resold', 'unsold'].includes(player.status))
       return res.status(400).json({ error: 'Player not available' });
 
     const session = await AuctionSession.create({
