@@ -93,9 +93,11 @@ export default function AuctionControl() {
       setTimer({ remaining: null, paused: false });
       loadData();
     });
+    socket.on('players:updated', () => loadData());
     return () => {
       socket.off('auction:start'); socket.off('auction:bid_update');
       socket.off('auction:timer'); socket.off('auction:sold'); socket.off('auction:unsold');
+      socket.off('players:updated');
     };
   }, [socket, toast, loadData]);
 
@@ -279,38 +281,49 @@ export default function AuctionControl() {
             </div>
             {activeSession && activePlayer ? (
               <div className="flex flex-col h-full flex-1 overflow-hidden">
-                <div className="relative overflow-hidden flex-1" style={{ minHeight: '260px' }}>
-                  {activePlayer.photo ? (
-                    <>
-                      <Image src={activePlayer.photo} alt="" fill unoptimized
-                        className="absolute inset-0 object-cover scale-110 blur-xl opacity-30 pointer-events-none" />
+                {/* Image LEFT + Bid RIGHT layout */}
+                <div className="flex flex-1 min-h-0">
+                  {/* Left: Player Image */}
+                  <div className="relative w-2/5 shrink-0 overflow-hidden" style={{ minHeight: '260px' }}>
+                    {activePlayer.photo ? (
                       <Image src={activePlayer.photo} alt={activePlayer.name} fill unoptimized
                         className="absolute inset-0 object-cover"
-                        style={{ objectPosition: '50% 20%' }} />
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 bg-[#0d1e3a]" />
-                  )}
-                  <div className="absolute inset-0"
-                    style={{ background: 'linear-gradient(to bottom, rgba(10,22,40,0.05) 0%, rgba(10,22,40,0.15) 40%, rgba(10,22,40,0.80) 70%, rgba(10,22,40,0.97) 100%)' }} />
-
-                  {/* Timer top-left */}
-                  <div className="absolute top-3 left-3">
-                    <AuctionTimer remaining={timer.remaining} paused={timer.paused} size="sm" />
+                        style={{ objectPosition: '50% 20%' }}
+                        onError={(e) => { e.target.style.display = 'none'; }} />
+                    ) : (
+                      <div className="absolute inset-0 bg-[#0a1628] flex items-center justify-center">
+                        <svg className="w-12 h-12 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                      </div>
+                    )}
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, transparent 60%, rgba(13,30,58,0.8) 100%)' }} />
+                    {/* Base price */}
+                    <div className="absolute top-3 left-3 bg-[#0a1628]/80 backdrop-blur border border-[#c9a227]/30 rounded-lg px-2.5 py-1.5 text-center">
+                      <p className="text-white/40 text-[8px] uppercase tracking-wider">Base</p>
+                      <p className="text-[#c9a227] font-black text-base tabular-nums leading-none">{activePlayer.basePrice}</p>
+                    </div>
                   </div>
 
-                  <div className="absolute top-3 right-3 bg-[#0a1628]/80 backdrop-blur border border-[#c9a227]/30 rounded-lg px-2.5 py-1.5 text-center">
-                    <p className="text-white/40 text-[8px] uppercase tracking-wider">Base</p>
-                    <p className="text-[#c9a227] font-black text-base tabular-nums leading-none">{activePlayer.basePrice}</p>
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
-                    <p className="text-[#c9a227]/70 text-[10px] uppercase tracking-widest mb-1">{activePlayer.skills?.[0]}</p>
-                    <h2 className="text-2xl lg:text-3xl font-black text-white uppercase leading-none tracking-tight mb-2">
-                      {activePlayer.name}
-                    </h2>
-                    <div className="flex flex-wrap gap-1.5">
-                      {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+                  {/* Right: Player Info + Bid */}
+                  <div className="flex-1 flex flex-col justify-between p-4 min-w-0">
+                    <div>
+                      <AuctionTimer remaining={timer.remaining} paused={timer.paused} size="sm" />
+                      <p className="text-[#c9a227]/70 text-[10px] uppercase tracking-widest mt-3 mb-1">{activePlayer.skills?.[0]}</p>
+                      <h2 className="text-xl lg:text-2xl font-black text-white uppercase leading-none tracking-tight mb-2">
+                        {activePlayer.name}
+                      </h2>
+                      <div className="flex flex-wrap gap-1">
+                        {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Current Bid</p>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
+                        <span className="text-white/40 text-sm">pts</span>
+                      </div>
+                      {activeSession.currentHighestBidderName && (
+                        <p className="text-white/60 text-xs mt-1">↑ {activeSession.currentHighestBidderName}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -318,20 +331,7 @@ export default function AuctionControl() {
                 {/* Bid strip */}
                 <div className="shrink-0 border-t border-[#c9a227]/15 bg-[#0a1628]/60">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10">
-                    <div>
-                      <p className="text-white/40 text-[9px] uppercase tracking-widest">Current Bid</p>
-                      <div className="flex items-baseline gap-1.5 mt-0.5">
-                        <span className="text-4xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
-                        <span className="text-white/40 text-sm">pts</span>
-                      </div>
-                    </div>
                     <div className="flex items-center gap-2">
-                      {activeSession.currentHighestBidderName && (
-                        <div className="text-right">
-                          <p className="text-white/30 text-[9px] uppercase tracking-wider">Leading</p>
-                          <p className="text-white/80 text-sm font-bold">{activeSession.currentHighestBidderName}</p>
-                        </div>
-                      )}
                       {/* Pause / Resume */}
                       <button
                         onClick={timer.paused ? resumeTimer : pauseTimer}

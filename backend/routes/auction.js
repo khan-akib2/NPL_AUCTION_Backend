@@ -112,9 +112,7 @@ router.post('/bid', authMiddleware, captainOnly, async (req, res) => {
     session.currentHighestBidder = team._id;
     session.currentHighestBidderName = team.name;
     session.bids.push({ teamId: team._id, teamName: team.name, amount: newBid });
-    // Reset timer on each bid
-    session.timerRemaining = session.timerDuration;
-    session.timerPaused = false;
+    // Do NOT reset timer on bid — timer only resumes manually
     await session.save();
     await AuctionLog.create({ playerId: session.playerId, teamId: team._id, action: 'bid', amount: newBid });
 

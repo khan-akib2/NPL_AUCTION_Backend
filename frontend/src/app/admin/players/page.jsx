@@ -7,8 +7,8 @@ import { useToast } from '@/components/Toast';
 import SkillBadge from '@/components/SkillBadge';
 import Spinner from '@/components/Spinner';
 
-const SKILLS = ['Batsman', 'Bowler', 'All-rounder', 'Wicketkeeper', 'Fielder'];
-const emptyForm = { name: '', photo: '', skills: [], basePrice: 50 };
+const SKILLS = ['Batsman', 'Bowler', 'Wicketkeeper', 'Fielder'];
+const emptyForm = { name: '', photo: '', skills: [], gender: 'Male', basePrice: 50 };
 
 function PlayerPhoto({ src, alt }) {
   const [err, setErr] = useState(false);
@@ -59,8 +59,6 @@ function PhotoUpload({ value, onChange, token, toast }) {
         {uploading ? <Spinner size="sm" /> : <>{value ? 'Change Photo' : 'Upload Photo'}</>}
         <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFile} disabled={uploading} />
       </label>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder="or paste image URL"
-        className="w-full bg-[#c9a227]/8 border border-[#c9a227]/20 rounded-lg px-3 py-2 text-white/50 text-xs focus:outline-none focus:border-white/20 transition-colors placeholder-white/20" />
     </div>
   );
 }
@@ -92,10 +90,13 @@ export default function PlayersPage() {
     .filter(p => filter === 'all' || p.status === filter)
     .filter(p => !search.trim() || p.name.toLowerCase().includes(search.trim().toLowerCase()));
 
-  const toggleSkill = s => setForm(f => ({
-    ...f,
-    skills: f.skills.includes(s) ? f.skills.filter(x => x !== s) : [...f.skills, s],
-  }));
+  const toggleSkill = s => setForm(f => {
+    const current = f.skills.filter(x => x !== 'All-rounder');
+    const updated = current.includes(s) ? current.filter(x => x !== s) : [...current, s];
+    // Auto All-rounder if Batsman + Bowler both selected
+    const isAllRounder = updated.includes('Batsman') && updated.includes('Bowler');
+    return { ...f, skills: isAllRounder ? [...new Set([...updated, 'All-rounder'])] : updated };
+  });
 
   const handleSave = async () => {
     if (!form.name.trim()) return toast('Name required', 'warning');
@@ -111,7 +112,7 @@ export default function PlayersPage() {
   };
 
   const handleEdit = p => {
-    setForm({ name: p.name, photo: p.photo || '', skills: p.skills || [], basePrice: p.basePrice });
+    setForm({ name: p.name, photo: p.photo || '', skills: p.skills || [], gender: p.gender || 'Male', basePrice: p.basePrice });
     setEditId(p._id);
     setShowForm(true);
   };
@@ -254,8 +255,25 @@ export default function PlayersPage() {
                 <div className="flex flex-wrap gap-2">
                   {SKILLS.map(s => (
                     <button key={s} type="button" onClick={() => toggleSkill(s)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${form.skills.includes(s) ? 'bg-[#c9a227]/20 text-[#c9a227] border border-[#c9a227]/30' : 'bg-[#0a1628] text-white/30 border border-[#c9a227]/10 hover:text-white/60'}`}>
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${form.skills.filter(x => x !== 'All-rounder').includes(s) ? 'bg-[#c9a227]/20 text-[#c9a227] border border-[#c9a227]/30' : 'bg-[#0a1628] text-white/30 border border-[#c9a227]/10 hover:text-white/60'}`}>
+                      <span className={`w-3 h-3 rounded border flex items-center justify-center shrink-0 ${form.skills.filter(x => x !== 'All-rounder').includes(s) ? 'bg-[#c9a227] border-[#c9a227]' : 'border-white/20'}`}>
+                        {form.skills.filter(x => x !== 'All-rounder').includes(s) && <svg className="w-2 h-2 text-[#0a1628]" fill="currentColor" viewBox="0 0 12 12"><path d="M10 3L5 8.5 2 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
+                      </span>
                       {s}
+                    </button>
+                  ))}
+                </div>
+                {form.skills.includes('All-rounder') && (
+                  <p className="text-[#c9a227]/50 text-xs mt-1.5">✓ Auto-marked as All-rounder</p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-[#c9a227]/50 uppercase tracking-wider mb-2 block">Gender</label>
+                <div className="flex gap-2">
+                  {['Male', 'Female'].map(g => (
+                    <button key={g} type="button" onClick={() => setForm(f => ({ ...f, gender: g }))}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors border ${form.gender === g ? 'bg-[#c9a227]/20 text-[#c9a227] border-[#c9a227]/30' : 'bg-[#0a1628] text-white/30 border-[#c9a227]/10 hover:text-white/60'}`}>
+                      {g}
                     </button>
                   ))}
                 </div>

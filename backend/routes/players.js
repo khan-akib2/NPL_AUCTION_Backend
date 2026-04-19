@@ -65,11 +65,30 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
 // DELETE /api/players/:id
 router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
+    const player = await Player.findById(req.params.id);
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+
+    // Remove from team if sold
+    if (player.soldTo) {
+      const Team = (await import('../models/Team.js')).default;
+      await Team.findByIdAndUpdate(player.soldTo, {
+        $pull: { players: player._id },
+        $inc: { budget: player.soldPrice || 0, pointsSpent: -(player.soldPrice || 0), playerCount: -1 },
+      });
+    }
+
+    // Close any active auction session for this player
     await AuctionSession.updateMany(
       { playerId: req.params.id, status: 'active' },
       { status: 'closed', endedAt: new Date() }
     );
+
     await Player.findByIdAndDelete(req.params.id);
+
+    // Notify all clients
+    const io = global._io;
+    if (io) io.emit('players:updated');
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
