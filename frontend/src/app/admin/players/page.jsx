@@ -9,7 +9,14 @@ import Spinner from '@/components/Spinner';
 import { displaySkills } from '@/lib/skills';
 
 const SKILLS = ['Batsman', 'Bowler', 'Wicketkeeper', 'Fielder'];
-const emptyForm = { name: '', photo: '', skills: [], gender: 'Male', basePrice: 50 };
+const STATUSES = ['available', 'sold', 'unsold', 'resold'];
+const STATUS_COLORS = {
+  available: 'bg-green-500/15 text-green-400 border-green-500/30',
+  sold: 'bg-[#c9a227]/15 text-[#c9a227] border-[#c9a227]/30',
+  unsold: 'bg-white/10 text-white/40 border-white/20',
+  resold: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+};
+const emptyForm = { name: '', photo: '', skills: [], gender: 'Male', basePrice: 50, status: 'available' };
 
 function PlayerPhoto({ src, alt }) {
   const [err, setErr] = useState(false);
@@ -77,6 +84,7 @@ export default function PlayersPage() {
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -127,6 +135,13 @@ export default function PlayersPage() {
     else { toast('Deleted', 'success'); load(); }
   };
 
+  const confirmDeleteAll = async () => {
+    const res = await request('/api/players/all', { method: 'DELETE' });
+    setDeleteAllConfirm(false);
+    if (res?.error) toast(res.error, 'error');
+    else { toast('All players deleted', 'success'); load(); }
+  };
+
   return (
     <div className="flex flex-col min-h-screen lg:h-[calc(100vh-48px)]">
       {/* Header */}
@@ -135,10 +150,16 @@ export default function PlayersPage() {
           <h1 className="text-base font-semibold text-white">Players</h1>
           <p className="text-white/40 text-xs mt-0.5">{filtered.length} of {players.length}</p>
         </div>
-        <button onClick={() => { setForm(emptyForm); setEditId(null); setShowForm(true); }}
-          className="bg-[#c9a227] text-[#0a1628] text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#f0c040] transition-colors">
-          + Add
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setDeleteAllConfirm(true)}
+            className="bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
+            Delete All
+          </button>
+          <button onClick={() => { setForm(emptyForm); setEditId(null); setShowForm(true); }}
+            className="bg-[#c9a227] text-[#0a1628] text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#f0c040] transition-colors">
+            + Add
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -298,6 +319,26 @@ export default function PlayersPage() {
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 bg-[#c9a227] text-[#0a1628] font-bold py-2.5 rounded-lg text-sm hover:bg-[#f0c040] disabled:opacity-40 flex items-center justify-center gap-2">
                 {saving ? <Spinner size="sm" /> : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirm Modal */}
+      {deleteAllConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0d1e3a] border border-red-500/30 rounded-2xl p-6 w-full max-w-sm">
+            <h2 className="text-lg font-semibold text-white mb-2">Delete ALL Players?</h2>
+            <p className="text-white/50 text-sm mb-6">This will permanently delete all players from the database and reset all team squads. This cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteAllConfirm(false)}
+                className="flex-1 bg-[#0a1628] border border-[#c9a227]/15 text-white/50 py-2.5 rounded-lg text-sm hover:text-white transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmDeleteAll}
+                className="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-lg text-sm hover:bg-red-500 transition-colors">
+                Delete All
               </button>
             </div>
           </div>

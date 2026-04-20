@@ -62,6 +62,24 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// DELETE /api/players/all — delete all players
+router.delete('/all', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    // Close all active auction sessions
+    await AuctionSession.updateMany({ status: 'active' }, { status: 'closed', endedAt: new Date() });
+    // Remove all players from teams
+    const Team = (await import('../models/Team.js')).default;
+    await Team.updateMany({}, { $set: { players: [], playerCount: 0, pointsSpent: 0, budget: 1000 } });
+    // Delete all players
+    await Player.deleteMany({});
+    const io = global._io;
+    if (io) io.emit('players:updated');
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // DELETE /api/players/:id
 router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
