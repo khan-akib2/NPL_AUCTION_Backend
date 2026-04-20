@@ -42,7 +42,8 @@ export default function LoginPage() {
 
       {/* Left branding panel — desktop only */}
       <div className="hidden lg:flex flex-col w-[45%] bg-[#0d1e3a] border-r border-[#c9a227]/20 p-10 relative overflow-hidden">
-        <Image src="/NPL.png" alt="" fill className="object-cover opacity-15 pointer-events-none" />
+        <Image src="/NPL.png" alt="" fill priority sizes="45vw"
+          className="object-cover opacity-15 pointer-events-none" />
         <div className="absolute inset-0 bg-[#0d1e3a]/50 pointer-events-none" />
 
         {/* Top */}
@@ -84,7 +85,8 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
         {/* Background image — mobile only */}
         <div className="lg:hidden absolute inset-0 pointer-events-none">
-          <Image src="/NPL.png" alt="" fill className="w-full h-full object-cover opacity-[0.07]" />
+          <Image src="/NPL.png" alt="" fill sizes="100vw"
+            className="w-full h-full object-cover opacity-[0.07]" />
           <div className="absolute inset-0 bg-[#0a1628]/75" />
         </div>
 
@@ -100,7 +102,7 @@ export default function LoginPage() {
             <h2 className="text-2xl font-bold text-white">Sign in</h2>
             <p className="text-white/30 text-sm mt-1">Enter your credentials to continue</p>          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
             <div>
               <label className="block text-xs font-semibold text-[#c9a227]/60 uppercase tracking-widest mb-2">Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
@@ -113,7 +115,7 @@ export default function LoginPage() {
                 placeholder="••••••••" suppressHydrationWarning
                 className="w-full bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl px-4 py-3 text-white text-sm placeholder-white/15 focus:outline-none focus:border-[#c9a227]/50 transition-colors" />
             </div>
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading} suppressHydrationWarning
               className="w-full bg-[#c9a227] hover:bg-[#f0c040] text-[#0a1628] font-bold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-40 flex items-center justify-center gap-2 mt-1">
               {loading ? <Spinner size="sm" /> : 'Sign In'}
             </button>

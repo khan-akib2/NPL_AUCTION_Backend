@@ -35,7 +35,9 @@ export default function CaptainDashboard() {
       request('/api/teams'),
       request('/api/auction/active'),
     ]);
-    if (teamRes?.teams?.[0]) setTeam(teamRes.teams[0]);
+    // Try by teamId first, fallback to first team in list
+    const myTeam = teamRes?.teams?.[0] || null;
+    if (myTeam) setTeam(myTeam);
     if (sessionRes?.session) {
       setActiveSession(sessionRes.session);
       setActivePlayer(sessionRes.session.playerId);
@@ -137,6 +139,14 @@ export default function CaptainDashboard() {
   }, [team?.budget]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0a1628]"><Spinner size="lg" /></div>;
+  if (!team) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#0a1628]">
+      <div className="text-center">
+        <p className="text-white/50 text-sm mb-2">No team assigned</p>
+        <p className="text-white/25 text-xs">Contact admin to assign your team</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
@@ -185,8 +195,8 @@ export default function CaptainDashboard() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
           {budgetCritical
-            ? `Critical! Only ${team.budget} pts left — bid carefully`
-            : `Budget low — ${team.budget} pts remaining`}
+            ? `Critical! Only ${team?.budget} pts left — bid carefully`
+            : `Budget low — ${team?.budget} pts remaining`}
         </div>
       )}
 
@@ -220,7 +230,8 @@ export default function CaptainDashboard() {
                     {/* Sharp main photo — centered to show face */}
                     <Image src={activePlayer.photo} alt={activePlayer.name} fill unoptimized
                       className="absolute inset-0 object-cover"
-                      style={{ objectPosition: '50% 20%' }} />
+                      style={{ objectPosition: '50% 20%' }}
+                      loading="eager" />
                   </>
                 ) : (
                   <div className="absolute inset-0 bg-[#0d1e3a]" />
@@ -294,7 +305,7 @@ export default function CaptainDashboard() {
                 <div className="grid grid-cols-3 divide-x divide-[#c9a227]/10 border-b border-[#c9a227]/10">
                   <div className="px-3 py-2 text-center">
                     <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Your Budget</p>
-                    <p className="text-white/80 text-sm font-bold tabular-nums">{team.budget} pts</p>
+                    <p className="text-white/80 text-sm font-bold tabular-nums">{team?.budget ?? '—'} pts</p>
                   </div>
                   <div className="px-3 py-2 text-center">
                     <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Next Bid</p>

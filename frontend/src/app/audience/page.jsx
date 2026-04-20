@@ -137,16 +137,17 @@ export default function AudiencePage() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 lg:p-8 content-start" style={{ minHeight: 'calc(100vh - 100px)' }}>
+      <div className="flex-1 flex flex-col p-3 lg:p-6" style={{ minHeight: 'calc(100vh - 100px)' }}>
 
         {/* Auction Tab */}
         {tab === 'auction' && (
           <>
             {activeSession && activePlayer ? (
-              <>
-                {/* HERO PLAYER CARD — same design as captain page */}
-                <div className="flex-1 min-w-0 flex flex-col gap-4">
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '420px', height: '55vh', maxHeight: '600px' }}>
+              <div className="flex flex-col lg:flex-row gap-4 h-full">
+
+                {/* LEFT: Player card + bid info */}
+                <div className="flex-1 min-w-0 flex flex-col gap-3">
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '360px', height: '50vh', maxHeight: '560px' }}>
                     {activePlayer.photo ? (
                       <>
                         <Image src={activePlayer.photo} alt="" fill unoptimized
@@ -155,6 +156,7 @@ export default function AudiencePage() {
                         <Image src={activePlayer.photo} alt={activePlayer.name} fill unoptimized
                           className="absolute inset-0 object-cover"
                           style={{ objectPosition: '50% 20%' }}
+                          loading="eager"
                           onError={(e) => { e.target.style.display = 'none'; }} />
                       </>
                     ) : (
@@ -164,39 +166,25 @@ export default function AudiencePage() {
                     )}
                     <div className="absolute inset-0"
                       style={{ background: 'linear-gradient(to bottom, rgba(10,22,40,0.1) 0%, rgba(10,22,40,0.2) 40%, rgba(10,22,40,0.85) 70%, rgba(10,22,40,0.98) 100%)' }} />
-
-                    {/* LIVE badge */}
                     <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-red-500/90 backdrop-blur px-3 py-1 rounded-full">
                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                       <span className="text-white text-[10px] font-bold uppercase tracking-wider">Live</span>
                     </div>
-
-                    {/* Base price */}
                     <div className="absolute top-4 left-4 bg-[#0a1628]/80 backdrop-blur border border-[#c9a227]/30 rounded-xl px-3 py-2 text-center">
                       <p className="text-white/40 text-[9px] uppercase tracking-wider">Base</p>
                       <p className="text-[#c9a227] font-black text-lg tabular-nums leading-none">{activePlayer.basePrice}</p>
                     </div>
-
-                    {/* Player info */}
                     <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-8">
-                      <p className="text-[#c9a227] text-xs uppercase tracking-[0.2em] font-bold mb-2 opacity-90">
-                        {activePlayer.skills?.[0] || 'Player'}
-                      </p>
-                      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white uppercase leading-none tracking-tight mb-3">
-                        {activePlayer.name}
-                      </h1>
-                      <div className="flex flex-wrap gap-2">
-                        {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
-                      </div>
+                      <p className="text-[#c9a227] text-xs uppercase tracking-[0.2em] font-bold mb-2 opacity-90">{activePlayer.skills?.[0] || 'Player'}</p>
+                      <h1 className="text-4xl sm:text-5xl font-black text-white uppercase leading-none tracking-tight mb-3">{activePlayer.name}</h1>
+                      <div className="flex flex-wrap gap-2">{activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}</div>
                     </div>
                   </div>
 
-                  {/* Current bid strip */}
+                  {/* Bid strip */}
                   <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
                     {timer.remaining !== null && (
-                      <div className="px-5 pt-3">
-                        <AuctionTimer remaining={timer.remaining} paused={timer.paused} size="md" />
-                      </div>
+                      <div className="px-5 pt-3"><AuctionTimer remaining={timer.remaining} paused={timer.paused} size="md" /></div>
                     )}
                     <div className="flex items-center justify-between px-5 py-4">
                       <div>
@@ -208,44 +196,37 @@ export default function AudiencePage() {
                       </div>
                       <div className="text-right">
                         <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1">Leading</p>
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${
-                          activeSession.currentHighestBidderName
-                            ? 'bg-[#c9a227]/15 border-[#c9a227]/40'
-                            : 'bg-white/5 border-white/10'
-                        }`}>
-                          {activeSession.currentHighestBidderName && (
-                            <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />
-                          )}
-                          <span className="text-sm font-bold text-[#c9a227]">
-                            {activeSession.currentHighestBidderName || 'No bids yet'}
-                          </span>
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${activeSession.currentHighestBidderName ? 'bg-[#c9a227]/15 border-[#c9a227]/40' : 'bg-white/5 border-white/10'}`}>
+                          {activeSession.currentHighestBidderName && <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />}
+                          <span className="text-sm font-bold text-[#c9a227]">{activeSession.currentHighestBidderName || 'No bids yet'}</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Bid history */}
-                {bidHistory.length > 0 && (
-                  <div className="w-full lg:w-80 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl flex flex-col" style={{ maxHeight: '600px' }}>
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10">
-                      <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
-                      <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>
-                    </div>
-                    <div className="flex-1 overflow-y-auto divide-y divide-[#c9a227]/5">
-                      {bidHistory.map((b, i) => (
-                        <div key={i} className={`flex items-center justify-between px-4 py-2.5 ${i === 0 ? 'bg-[#c9a227]/8' : ''}`}>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/25 text-xs font-mono w-6 text-right">#{bidHistory.length - i}</span>
-                            <span className={`text-sm font-semibold ${i === 0 ? 'text-white' : 'text-white/60'}`}>{b.teamName}</span>
-                          </div>
-                          <span className={`text-sm font-black tabular-nums ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>{b.amount}</span>
-                        </div>
-                      ))}
-                    </div>
+                {/* RIGHT: Bid history — always visible, no scroll on page */}
+                <div className="w-full lg:w-72 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl flex flex-col" style={{ maxHeight: '80vh' }}>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10 shrink-0">
+                    <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
+                    <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>
                   </div>
-                )}
-              </>
+                  <div className="flex-1 overflow-y-auto divide-y divide-[#c9a227]/5">
+                    {bidHistory.length === 0 && (
+                      <p className="text-white/30 text-xs text-center py-8">No bids yet</p>
+                    )}
+                    {bidHistory.map((b, i) => (
+                      <div key={i} className={`flex items-center justify-between px-4 py-2.5 ${i === 0 ? 'bg-[#c9a227]/8' : ''}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/25 text-xs font-mono w-6 text-right">#{bidHistory.length - i}</span>
+                          <span className={`text-sm font-semibold ${i === 0 ? 'text-white' : 'text-white/60'}`}>{b.teamName}</span>
+                        </div>
+                        <span className={`text-sm font-black tabular-nums ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>{b.amount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
                 <div className="w-20 h-20 rounded-full bg-[#c9a227]/5 border border-[#c9a227]/10 flex items-center justify-center mb-4">

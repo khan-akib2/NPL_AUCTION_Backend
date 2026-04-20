@@ -30,7 +30,7 @@ export default function AdminSidebar() {
           <Logo size="sm" className="rounded-xl" />
           <span className="text-[#c9a227] font-bold tracking-widest text-xs uppercase">APL Auction</span>
         </div>
-        <button onClick={() => setOpen(!open)} className="text-[#c9a227]/60 hover:text-[#c9a227] transition-colors p-1">
+        <button onClick={() => setOpen(!open)} aria-label="Open navigation menu" className="text-[#c9a227]/60 hover:text-[#c9a227] transition-colors p-1">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
@@ -54,7 +54,7 @@ export default function AdminSidebar() {
               <div className="text-[#c9a227]/30 text-[10px] tracking-widest uppercase">Admin Panel</div>
             </div>
           </div>
-          <button onClick={() => setOpen(false)} className="lg:hidden text-[#c9a227]/30 hover:text-[#c9a227] transition-colors">
+          <button onClick={() => setOpen(false)} aria-label="Close navigation menu" className="lg:hidden text-[#c9a227]/30 hover:text-[#c9a227] transition-colors">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>

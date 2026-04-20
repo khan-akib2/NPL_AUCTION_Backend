@@ -5,11 +5,13 @@ import { ToastProvider } from "@/components/Toast";
 export const metadata = {
   title: "APL Sports Auction",
   description: "Alliance Premiere League Sports Auction Platform",
+  robots: { index: true, follow: true },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#0a1628",
 };
 
 export default function RootLayout({ children }) {

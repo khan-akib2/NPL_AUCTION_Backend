@@ -81,7 +81,7 @@ function Navbar({ scrolled }) {
             Sign In
           </Link>
           {/* Hamburger */}
-          <button onClick={() => setOpen(o => !o)} className="lg:hidden ml-1 p-2 text-white/50 hover:text-white transition-colors">
+          <button onClick={() => setOpen(o => !o)} aria-label={open ? 'Close menu' : 'Open menu'} className="lg:hidden ml-1 p-2 text-white/50 hover:text-white transition-colors">
             {open ? (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             ) : (

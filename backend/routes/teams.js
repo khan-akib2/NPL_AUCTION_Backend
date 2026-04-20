@@ -9,7 +9,11 @@ const router = Router();
 router.get('/', authMiddleware, async (req, res) => {
   try {
     if (req.user.role === 'captain') {
-      const team = await Team.findById(req.user.teamId).populate('players').populate('captainId', 'name email');
+      // Always fetch fresh teamId from DB, not from JWT (which may be stale)
+      const freshUser = await User.findById(req.user.id);
+      const teamId = freshUser?.teamId;
+      if (!teamId) return res.json({ teams: [] });
+      const team = await Team.findById(teamId).populate('players').populate('captainId', 'name email');
       return res.json({ teams: team ? [team] : [] });
     }
     const teams = await Team.find().populate('players').populate('captainId', 'name email');
@@ -23,6 +27,10 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, adminOnly, async (req, res) => {
   try {
     const team = await Team.create(req.body);
+    // Assign teamId to captain if provided
+    if (req.body.captainId) {
+      await User.findByIdAndUpdate(req.body.captainId, { teamId: team._id });
+    }
     res.status(201).json({ team });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -32,8 +40,22 @@ router.post('/', authMiddleware, adminOnly, async (req, res) => {
 // PUT /api/teams/:id
 router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
+    const oldTeam = await Team.findById(req.params.id);
+    if (!oldTeam) return res.status(404).json({ error: 'Team not found' });
+
     const team = await Team.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
-    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    // Sync User.teamId when captainId changes
+    const oldCaptain = oldTeam.captainId?.toString();
+    const newCaptain = req.body.captainId?.toString();
+
+    if (oldCaptain !== newCaptain) {
+      // Remove teamId from old captain
+      if (oldCaptain) await User.findByIdAndUpdate(oldCaptain, { teamId: null });
+      // Assign teamId to new captain
+      if (newCaptain) await User.findByIdAndUpdate(newCaptain, { teamId: team._id });
+    }
+
     res.json({ team });
   } catch (e) {
     res.status(500).json({ error: e.message });
