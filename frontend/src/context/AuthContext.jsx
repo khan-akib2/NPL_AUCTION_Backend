@@ -2,11 +2,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
-
-// Use sessionStorage so each browser tab has its own independent session.
-// Admin can be logged in on one tab while captains are logged in on other tabs
-// without interfering with each other.
 const storage = typeof window !== 'undefined' ? window.sessionStorage : null;
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -32,7 +29,16 @@ export function AuthProvider({ children }) {
     storage?.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const t = storage?.getItem('token');
+    if (t) {
+      try {
+        await fetch(`${BACKEND_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${t}` },
+        });
+      } catch { /* silent */ }
+    }
     setToken(null);
     setUser(null);
     storage?.removeItem('token');

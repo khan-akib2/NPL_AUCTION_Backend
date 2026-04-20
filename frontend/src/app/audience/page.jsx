@@ -176,7 +176,14 @@ export default function AudiencePage() {
                       <p className="text-[#c9a227] font-black text-lg tabular-nums leading-none">{activePlayer.basePrice}</p>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-8">
-                      <p className="text-[#c9a227] text-xs uppercase tracking-[0.2em] font-bold mb-2 opacity-90">{displaySkills(activePlayer.skills)[0] || 'Player'}</p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-[#c9a227] text-xs uppercase tracking-[0.2em] font-bold opacity-90">{displaySkills(activePlayer.skills)[0] || 'Player'}</p>
+                        {activePlayer.gender && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${activePlayer.gender === 'Female' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
+                            {activePlayer.gender}
+                          </span>
+                        )}
+                      </div>
                       <h1 className="text-4xl sm:text-5xl font-black text-white uppercase leading-none tracking-tight mb-3">{activePlayer.name}</h1>
                       <div className="flex flex-wrap gap-2">{displaySkills(activePlayer.skills).map(s => <SkillBadge key={s} skill={s} />)}</div>
                     </div>

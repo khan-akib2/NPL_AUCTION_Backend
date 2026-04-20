@@ -256,9 +256,16 @@ export default function CaptainDashboard() {
 
                 {/* Player info — bottom overlay */}
                 <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-6">
-                  <p className="text-[#c9a227] text-[10px] uppercase tracking-[0.2em] font-bold mb-1 opacity-90">
-                    {displaySkills(activePlayer.skills)[0] || 'Player'}
-                  </p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[#c9a227] text-[10px] uppercase tracking-[0.2em] font-bold opacity-90">
+                      {displaySkills(activePlayer.skills)[0] || 'Player'}
+                    </p>
+                    {activePlayer.gender && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${activePlayer.gender === 'Female' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
+                        {activePlayer.gender}
+                      </span>
+                    )}
+                  </div>
                   <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black text-white uppercase leading-none tracking-tight mb-2">
                     {activePlayer.name}
                   </h1>

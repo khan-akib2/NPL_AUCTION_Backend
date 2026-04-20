@@ -203,6 +203,7 @@ export default function PlayersPage() {
                       <tr className="border-b border-[#c9a227]/15">
                         <th className="text-left px-6 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Name</th>
                         <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Skills</th>
+                        <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Gender</th>
                         <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Base</th>
                         <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Status</th>
                         <th className="text-left px-4 py-3 text-white/40 text-xs uppercase tracking-wider font-medium">Team</th>
@@ -215,6 +216,9 @@ export default function PlayersPage() {
                         <tr key={p._id} className="border-b border-[#c9a227]/8 hover:bg-[#c9a227]/5 transition-colors">
                           <td className="px-6 py-3 text-white font-medium">{p.name}</td>
                           <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{displaySkills(p.skills).map(s => <SkillBadge key={s} skill={s} />)}</div></td>
+                          <td className="px-4 py-3">
+                            {p.gender && <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${p.gender === 'Female' ? 'bg-pink-500/20 text-pink-400' : 'bg-blue-500/20 text-blue-400'}`}>{p.gender}</span>}
+                          </td>
                           <td className="px-4 py-3 text-white/40">{p.basePrice}</td>
                           <td className="px-4 py-3 text-white/50 capitalize">{p.status}</td>
                           <td className="px-4 py-3 text-white/30">{p.soldTo?.name || '—'}</td>

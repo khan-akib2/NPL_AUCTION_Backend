@@ -78,7 +78,12 @@ export default function AuctionControl() {
       setMobileTab('auction');
     });
     socket.on('auction:bid_update', (data) => {
-      setActiveSession(prev => prev ? { ...prev, currentBid: data.currentBid, currentHighestBidderName: data.bidderTeamName } : prev);
+      setActiveSession(prev => prev ? {
+        ...prev,
+        currentBid: data.currentBid,
+        currentHighestBidderName: data.bidderTeamName,
+        currentHighestBidder: data.bidderTeamId,
+      } : prev);
       setBidHistory(prev => [{ teamName: data.bidderTeamName, amount: data.currentBid }, ...prev]);
     });
     socket.on('auction:timer', (data) => setTimer(data));
@@ -272,7 +277,14 @@ export default function AuctionControl() {
                   </div>
 
                   <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
-                    <p className="text-[#c9a227]/70 text-[10px] uppercase tracking-widest mb-1">{displaySkills(activePlayer.skills)[0]}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-[#c9a227]/70 text-[10px] uppercase tracking-widest">{displaySkills(activePlayer.skills)[0]}</p>
+                      {activePlayer.gender && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${activePlayer.gender === 'Female' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
+                          {activePlayer.gender}
+                        </span>
+                      )}
+                    </div>
                     <h2 className="text-2xl lg:text-3xl font-black text-white uppercase leading-none tracking-tight mb-2">
                       {activePlayer.name}
                     </h2>
