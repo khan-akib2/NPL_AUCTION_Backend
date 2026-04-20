@@ -17,11 +17,6 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Block if already logged in
-    if (user.activeToken) {
-      return res.status(409).json({ error: 'Already logged in on another device. Please log out first.' });
-    }
-
     const token = signToken({ id: user._id, role: user.role, teamId: user.teamId?._id || null });
     await User.findByIdAndUpdate(user._id, { activeToken: token });
 

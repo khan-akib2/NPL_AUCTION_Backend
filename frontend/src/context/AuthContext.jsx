@@ -43,25 +43,6 @@ export function AuthProvider({ children }) {
     storage?.removeItem('user');
   };
 
-  // Clear session on tab/browser close — use pagehide for reliability
-  useEffect(() => {
-    const handleUnload = () => {
-      const t = storage?.getItem('token');
-      if (t) {
-        navigator.sendBeacon(
-          `${BACKEND_URL}/api/auth/logout-beacon`,
-          JSON.stringify({ token: t })
-        );
-      }
-    };
-    window.addEventListener('pagehide', handleUnload);
-    window.addEventListener('beforeunload', handleUnload);
-    return () => {
-      window.removeEventListener('pagehide', handleUnload);
-      window.removeEventListener('beforeunload', handleUnload);
-    };
-  }, []);
-
   return (
     <AuthContext.Provider value={{ user, token, login, logout, loading }}>
       {children}

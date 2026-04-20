@@ -21,12 +21,6 @@ function useCounter(target, duration = 2000, start = false) {
   return count;
 }
 
-const MOCK_PLAYERS = [
-  { name: 'Arjun Sharma', skill: 'Batsman', bid: 150, team: 'Thunder Hawks' },
-  { name: 'Rohit Verma', skill: 'Bowler', bid: 210, team: 'Storm Riders' },
-  { name: 'Vikas Singh', skill: 'All-Rounder', bid: 180, team: 'Iron Wolves' },
-];
-
 const NAV_LINKS = [
   { label: 'Home', href: '#hero' },
   { label: 'Auction', href: '#live-auction' },
@@ -179,25 +173,31 @@ function HeroSection() {
   );
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+
 function LiveAuctionCard() {
-  const [idx, setIdx] = useState(0);
-  const [bid, setBid] = useState(MOCK_PLAYERS[0].bid);
+  const [session, setSession] = useState(null);
+  const [player, setPlayer] = useState(null);
 
   useEffect(() => {
-    const t = setInterval(() => setBid(p => p + Math.floor(Math.random() * 20 + 10)), 1800);
-    return () => clearInterval(t);
+    const fetchLive = () => {
+      fetch(`${BACKEND_URL}/api/auction/active-public`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.session) {
+            setSession(d.session);
+            setPlayer(d.session.playerId);
+          } else {
+            setSession(null);
+            setPlayer(null);
+          }
+        })
+        .catch(() => {});
+    };
+    fetchLive();
+    const interval = setInterval(fetchLive, 5000);
+    return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      const next = (idx + 1) % MOCK_PLAYERS.length;
-      setIdx(next);
-      setBid(MOCK_PLAYERS[next].bid);
-    }, 5000);
-    return () => clearInterval(t);
-  }, [idx]);
-
-  const player = MOCK_PLAYERS[idx];
 
   return (
     <section id="live-auction" className="py-16 sm:py-24 px-5 bg-[#060f1e]">
@@ -214,36 +214,51 @@ function LiveAuctionCard() {
               style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(201,162,39,0.8) 0%, transparent 60%)' }} />
 
             <div className="relative flex flex-col items-center gap-6 sm:flex-row sm:justify-between sm:gap-10">
-              {/* Player info */}
-              <div className="text-center sm:text-left flex-1 w-full">
-                <div className="flex items-center gap-3 justify-center sm:justify-start mb-4">
-                  <span className="flex items-center gap-1.5 bg-red-500 px-3 py-1 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    <span className="text-white text-[10px] font-black uppercase tracking-widest">Live</span>
-                  </span>
-                  <span className="text-[#c9a227]/50 text-xs uppercase tracking-widest font-semibold">{player.skill}</span>
+              {session && player ? (
+                <>
+                  {/* Player info */}
+                  <div className="text-center sm:text-left flex-1 w-full">
+                    <div className="flex items-center gap-3 justify-center sm:justify-start mb-4">
+                      <span className="flex items-center gap-1.5 bg-red-500 px-3 py-1 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        <span className="text-white text-[10px] font-black uppercase tracking-widest">Live</span>
+                      </span>
+                      <span className="text-[#c9a227]/50 text-xs uppercase tracking-widest font-semibold">{player.skills?.[0]}</span>
+                    </div>
+                    <h3 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tight leading-none mb-2">{player.name}</h3>
+                    <p className="text-white/30 text-sm">Currently on auction block</p>
+                  </div>
+                  {/* Bid info */}
+                  <div className="flex flex-col items-center gap-3 w-full sm:w-auto shrink-0">
+                    <div className="relative bg-[#060f1e] border border-[#c9a227]/20 rounded-2xl px-8 py-5 text-center w-full sm:w-auto">
+                      <p className="text-white/30 text-[9px] uppercase tracking-[0.2em] mb-1">Current Bid</p>
+                      <p className="text-5xl sm:text-6xl font-black text-[#c9a227] tabular-nums leading-none">{session.currentBid}</p>
+                      <p className="text-white/20 text-xs mt-1 uppercase tracking-wider">points</p>
+                    </div>
+                    {session.currentHighestBidderName && (
+                      <div className="bg-[#c9a227]/10 border border-[#c9a227]/20 rounded-xl px-5 py-2.5 text-center w-full">
+                        <p className="text-white/25 text-[9px] uppercase tracking-wider mb-0.5">Leading Team</p>
+                        <p className="text-[#c9a227] font-black text-sm">{session.currentHighestBidderName}</p>
+                      </div>
+                    )}
+                    <Link href="/audience"
+                      className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#c9a227] animate-pulse" />
+                      Watch Full Auction
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full text-center py-8">
+                  <p className="text-white/30 text-lg font-semibold mb-2">No Active Auction</p>
+                  <p className="text-white/20 text-sm mb-6">The next player will appear here when bidding starts</p>
+                  <Link href="/audience"
+                    className="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#c9a227]/50" />
+                    Watch Audience View
+                  </Link>
                 </div>
-                <h3 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tight leading-none mb-2">{player.name}</h3>
-                <p className="text-white/30 text-sm">Currently on auction block</p>
-              </div>
-
-              {/* Bid info */}
-              <div className="flex flex-col items-center gap-3 w-full sm:w-auto shrink-0">
-                <div className="relative bg-[#060f1e] border border-[#c9a227]/20 rounded-2xl px-8 py-5 text-center w-full sm:w-auto">
-                  <p className="text-white/30 text-[9px] uppercase tracking-[0.2em] mb-1">Current Bid</p>
-                  <p className="text-5xl sm:text-6xl font-black text-[#c9a227] tabular-nums leading-none">{bid}</p>
-                  <p className="text-white/20 text-xs mt-1 uppercase tracking-wider">points</p>
-                </div>
-                <div className="bg-[#c9a227]/10 border border-[#c9a227]/20 rounded-xl px-5 py-2.5 text-center w-full">
-                  <p className="text-white/25 text-[9px] uppercase tracking-wider mb-0.5">Leading Team</p>
-                  <p className="text-[#c9a227] font-black text-sm">{player.team}</p>
-                </div>
-                <Link href="/audience"
-                  className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#c9a227] animate-pulse" />
-                  Watch Full Auction
-                </Link>
-              </div>
+              )}
             </div>
           </div>
           <div className="h-px bg-gradient-to-r from-transparent via-[#c9a227]/20 to-transparent" />

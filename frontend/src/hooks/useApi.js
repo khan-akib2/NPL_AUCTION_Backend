@@ -18,15 +18,7 @@ export function useApi() {
         ...options.headers,
       },
     });
-    if (res.status === 401) {
-      // Token invalid/expired — force logout
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.removeItem('token');
-        window.sessionStorage.removeItem('user');
-        window.location.href = '/login';
-      }
-      return null;
-    }
+    if (res.status === 401) return null;
     return res.json();
   };
 
