@@ -7,6 +7,7 @@ import SkillBadge from '@/components/SkillBadge';
 import Logo from '@/components/Logo';
 import AuctionTimer from '@/components/AuctionTimer';
 import { playBidSound, playSoldSound, playUnsoldSound, playTimerUrgentSound } from '@/lib/sounds';
+import { displaySkills } from '@/lib/skills';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
@@ -84,7 +85,7 @@ export default function AudiencePage() {
     });
     s.on('auction:timer', (data) => {
       setTimer(data);
-      if (!data.paused && data.remaining <= 5 && data.remaining > 0) playTimerUrgentSound();
+      // Timer sounds disabled
     });
     s.on('auction:sold', () => {
       setActiveSession(null); setActivePlayer(null); setBidHistory([]);
@@ -143,11 +144,11 @@ export default function AudiencePage() {
         {tab === 'auction' && (
           <>
             {activeSession && activePlayer ? (
-              <div className="flex flex-col lg:flex-row gap-4 h-full">
+              <div className="flex flex-col lg:flex-row gap-4" style={{ height: 'calc(100vh - 140px)' }}>
 
                 {/* LEFT: Player card + bid info */}
                 <div className="flex-1 min-w-0 flex flex-col gap-3">
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '360px', height: '50vh', maxHeight: '560px' }}>
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl flex-1" style={{ minHeight: '360px' }}>
                     {activePlayer.photo ? (
                       <>
                         <Image src={activePlayer.photo} alt="" fill unoptimized
@@ -175,17 +176,15 @@ export default function AudiencePage() {
                       <p className="text-[#c9a227] font-black text-lg tabular-nums leading-none">{activePlayer.basePrice}</p>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pt-8">
-                      <p className="text-[#c9a227] text-xs uppercase tracking-[0.2em] font-bold mb-2 opacity-90">{activePlayer.skills?.[0] || 'Player'}</p>
+                      <p className="text-[#c9a227] text-xs uppercase tracking-[0.2em] font-bold mb-2 opacity-90">{displaySkills(activePlayer.skills)[0] || 'Player'}</p>
                       <h1 className="text-4xl sm:text-5xl font-black text-white uppercase leading-none tracking-tight mb-3">{activePlayer.name}</h1>
-                      <div className="flex flex-wrap gap-2">{activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}</div>
+                      <div className="flex flex-wrap gap-2">{displaySkills(activePlayer.skills).map(s => <SkillBadge key={s} skill={s} />)}</div>
                     </div>
                   </div>
 
                   {/* Bid strip */}
                   <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
-                    {timer.remaining !== null && (
-                      <div className="px-5 pt-3"><AuctionTimer remaining={timer.remaining} paused={timer.paused} size="md" /></div>
-                    )}
+                  {/* Timer — removed */}
                     <div className="flex items-center justify-between px-5 py-4">
                       <div>
                         <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-0.5">Current Bid</p>
@@ -206,7 +205,7 @@ export default function AudiencePage() {
                 </div>
 
                 {/* RIGHT: Bid history — always visible, no scroll on page */}
-                <div className="w-full lg:w-72 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl flex flex-col" style={{ maxHeight: '80vh' }}>
+                <div className="w-full lg:w-72 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl flex flex-col">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10 shrink-0">
                     <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
                     <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>

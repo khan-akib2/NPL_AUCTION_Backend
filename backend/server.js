@@ -82,16 +82,7 @@ io.on('connection', (socket) => {
 // MongoDB
 await connectDB();
 
-// Resume any active auction timer after server restart
-{
-  const { default: AuctionSession } = await import('./models/AuctionSession.js');
-  const active = await AuctionSession.findOne({ status: 'active' });
-  if (active && !active.timerPaused && active.timerRemaining > 0) {
-    const { startTimerResume } = await import('./routes/auction.js');
-    startTimerResume(active);
-    console.log(`Resumed timer for active session ${active._id} (${active.timerRemaining}s remaining)`);
-  }
-}
+// Timer is disabled — admin manually controls auction end
 
 // Keep-alive ping — prevents Render free tier from sleeping
 // Pings itself every 14 minutes

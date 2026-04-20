@@ -15,36 +15,13 @@ function clearTimer() {
   if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
 }
 
-async function autoUnsold(sessionId) {
-  clearTimer();
-  try {
-    const session = await AuctionSession.findById(sessionId);
-    if (!session || session.status !== 'active') return;
-    session.status = 'closed'; session.endedAt = new Date(); await session.save();
-    const player = await Player.findByIdAndUpdate(session.playerId, { status: 'unsold' }, { returnDocument: 'after' });
-    await AuctionLog.create({ playerId: session.playerId, action: 'unsold', amount: 0 });
-    const io = getIO();
-    if (io) io.emit('auction:unsold', { player, session });
-  } catch (e) { console.error('autoUnsold error:', e.message); }
-}
-
-export function startTimerResume(session) {
-  startTimer(session);
-}
-
 function startTimer(session) {
+  // Timer disabled — auction runs until admin manually marks sold/unsold
   clearTimer();
-  _timerInterval = setInterval(async () => {
-    try {
-      const s = await AuctionSession.findById(session._id);
-      if (!s || s.status !== 'active' || s.timerPaused) return;
-      s.timerRemaining = Math.max(0, s.timerRemaining - 1);
-      await s.save();
-      const io = getIO();
-      if (io) io.emit('auction:timer', { remaining: s.timerRemaining, paused: false });
-      if (s.timerRemaining <= 0) await autoUnsold(s._id);
-    } catch (e) { console.error('timer tick error:', e.message); }
-  }, 1000);
+}
+
+async function autoUnsold(sessionId) {
+  // Disabled — admin manually controls auction end
 }
 
 // GET /api/auction/active
@@ -104,6 +81,10 @@ router.post('/bid', authMiddleware, captainOnly, async (req, res) => {
     const team = await Team.findById(req.user.teamId);
     if (!team) return res.status(404).json({ error: 'Team not found' });
     if (team.playerCount >= 7) return res.status(400).json({ error: 'Squad is full (7 players max)' });
+
+    // Captain cannot bid if already leading
+    if (session.currentHighestBidder?.toString() === team._id.toString())
+      return res.status(400).json({ error: 'You are already leading — wait for another team to bid' });
 
     const newBid = session.currentBid + 10;
     if (team.budget < newBid) return res.status(400).json({ error: 'Insufficient budget' });

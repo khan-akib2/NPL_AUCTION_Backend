@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Logo from '@/components/Logo';
 import SkillBadge from '@/components/SkillBadge';
 import Spinner from '@/components/Spinner';
+import { displaySkills } from '@/lib/skills';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
@@ -138,7 +139,7 @@ export default function ResultsPage() {
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-xs font-semibold truncate">{p.name}</p>
                               <div className="flex gap-1 mt-0.5">
-                                {p.skills?.slice(0, 2).map(s => <SkillBadge key={s} skill={s} />)}
+                              {displaySkills(p.skills).slice(0, 2).map(s => <SkillBadge key={s} skill={s} />)}
                               </div>
                             </div>
                             <div className="text-right shrink-0">

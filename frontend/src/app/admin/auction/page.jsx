@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast';
 import SkillBadge from '@/components/SkillBadge';
 import Spinner from '@/components/Spinner';
 import AuctionTimer from '@/components/AuctionTimer';
+import { displaySkills } from '@/lib/skills';
 
 export default function AuctionControl() {
   const { request } = useApi();
@@ -218,7 +219,7 @@ export default function AuctionControl() {
                     selectedPlayer?._id === p._id ? 'bg-[#c9a227]/15 text-white' : 'text-white/50 hover:bg-[#c9a227]/8 hover:text-white/80'
                   }`}>
                   <div className="font-medium text-sm">{p.name}</div>
-                  <div className="text-xs text-white/40 mt-0.5">{p.skills?.join(' · ')} · {p.basePrice}pts</div>
+                  <div className="text-xs text-white/40 mt-0.5">{displaySkills(p.skills).join(' · ')} · {p.basePrice}pts</div>
                   {p.status === 'resold' && <span className="text-[10px] text-orange-400/60 uppercase tracking-wider">Resold</span>}
                   {p.status === 'unsold' && <span className="text-[10px] text-red-400/60 uppercase tracking-wider">Unsold</span>}
                 </button>
@@ -227,42 +228,7 @@ export default function AuctionControl() {
             </div>
           </div>
           {/* Timer duration selector + start — outside card so dropdown isn't clipped */}
-          <div className="shrink-0 pt-2 space-y-2">
-            <div className="flex items-center gap-2">
-              <label className="text-white/30 text-xs shrink-0">Timer</label>
-              {/* Custom dropdown */}
-              <div className="relative flex-1" ref={timerDropdownRef}>
-                <button
-                  type="button"
-                  disabled={!!activeSession}
-                  onClick={() => setTimerOpen(o => !o)}
-                  className="w-full flex items-center justify-between bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg px-3 py-1.5 text-white text-xs disabled:opacity-40 hover:border-[#c9a227]/40 transition-colors"
-                >
-                  <span>{timerDuration}s</span>
-                  <svg className={`w-3 h-3 text-white/40 transition-transform ${timerOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {timerOpen && !activeSession && (
-                  <div className="absolute top-full mt-1 left-0 right-0 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-lg overflow-hidden shadow-xl z-50">
-                    {[15, 20, 30, 45, 60].map(v => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => { setTimerDuration(v); setTimerOpen(false); }}
-                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                          timerDuration === v
-                            ? 'bg-[#c9a227]/15 text-[#c9a227] font-semibold'
-                            : 'text-white/60 hover:bg-[#c9a227]/8 hover:text-white'
-                        }`}
-                      >
-                        {v}s
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="shrink-0 pt-2">
             <button onClick={startBidding} disabled={!selectedPlayer || !!activeSession || actionLoading}
               className="w-full bg-[#c9a227] text-[#0a1628] font-semibold py-2.5 rounded-lg text-sm hover:bg-[#f0c040] disabled:opacity-20 flex items-center justify-center gap-2">
               {actionLoading ? <Spinner size="sm" /> : 'Start Bidding'}
@@ -298,10 +264,7 @@ export default function AuctionControl() {
                   <div className="absolute inset-0"
                     style={{ background: 'linear-gradient(to bottom, rgba(10,22,40,0.05) 0%, rgba(10,22,40,0.15) 40%, rgba(10,22,40,0.80) 70%, rgba(10,22,40,0.97) 100%)' }} />
 
-                  {/* Timer top-left */}
-                  <div className="absolute top-3 left-3">
-                    <AuctionTimer remaining={timer.remaining} paused={timer.paused} size="sm" />
-                  </div>
+                  {/* Timer top-left — removed as per requirement */}
 
                   <div className="absolute top-3 right-3 bg-[#0a1628]/80 backdrop-blur border border-[#c9a227]/30 rounded-lg px-2.5 py-1.5 text-center">
                     <p className="text-white/40 text-[8px] uppercase tracking-wider">Base</p>
@@ -309,12 +272,12 @@ export default function AuctionControl() {
                   </div>
 
                   <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
-                    <p className="text-[#c9a227]/70 text-[10px] uppercase tracking-widest mb-1">{activePlayer.skills?.[0]}</p>
+                    <p className="text-[#c9a227]/70 text-[10px] uppercase tracking-widest mb-1">{displaySkills(activePlayer.skills)[0]}</p>
                     <h2 className="text-2xl lg:text-3xl font-black text-white uppercase leading-none tracking-tight mb-2">
                       {activePlayer.name}
                     </h2>
                     <div className="flex flex-wrap gap-1.5">
-                      {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+                      {displaySkills(activePlayer.skills).map(s => <SkillBadge key={s} skill={s} />)}
                     </div>
                   </div>
                 </div>
@@ -329,28 +292,12 @@ export default function AuctionControl() {
                         <span className="text-white/40 text-sm">pts</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {activeSession.currentHighestBidderName && (
-                        <div className="text-right">
-                          <p className="text-white/30 text-[9px] uppercase tracking-wider">Leading</p>
-                          <p className="text-white/80 text-sm font-bold">{activeSession.currentHighestBidderName}</p>
-                        </div>
-                      )}
-                      {/* Pause / Resume */}
-                      <button
-                        onClick={timer.paused ? resumeTimer : pauseTimer}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                          timer.paused
-                            ? 'bg-[#c9a227]/15 border-[#c9a227]/40 text-[#c9a227]'
-                            : 'bg-white/5 border-white/15 text-white/50 hover:text-white'
-                        }`}>
-                        {timer.paused ? (
-                          <><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Resume</>
-                        ) : (
-                          <><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>Pause</>
-                        )}
-                      </button>
-                    </div>
+                    {activeSession.currentHighestBidderName && (
+                      <div className="text-right">
+                        <p className="text-white/30 text-[9px] uppercase tracking-wider">Leading</p>
+                        <p className="text-white/80 text-sm font-bold">{activeSession.currentHighestBidderName}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2 p-3">
                     <button onClick={markSold} disabled={!activeSession.currentHighestBidder || actionLoading}

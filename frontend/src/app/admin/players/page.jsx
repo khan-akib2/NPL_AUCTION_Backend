@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
 import SkillBadge from '@/components/SkillBadge';
 import Spinner from '@/components/Spinner';
+import { displaySkills } from '@/lib/skills';
 
 const SKILLS = ['Batsman', 'Bowler', 'Wicketkeeper', 'Fielder'];
 const emptyForm = { name: '', photo: '', skills: [], gender: 'Male', basePrice: 50 };
@@ -91,11 +92,12 @@ export default function PlayersPage() {
     .filter(p => !search.trim() || p.name.toLowerCase().includes(search.trim().toLowerCase()));
 
   const toggleSkill = s => setForm(f => {
+    const base = ['Batsman', 'Bowler', 'Wicketkeeper', 'Fielder'];
     const current = f.skills.filter(x => x !== 'All-rounder');
     const updated = current.includes(s) ? current.filter(x => x !== s) : [...current, s];
-    // Auto All-rounder if Batsman + Bowler both selected
-    const isAllRounder = updated.includes('Batsman') && updated.includes('Bowler');
-    return { ...f, skills: isAllRounder ? [...new Set([...updated, 'All-rounder'])] : updated };
+    // If all 4 base skills selected → only show All-rounder
+    const allSelected = base.every(b => updated.includes(b));
+    return { ...f, skills: allSelected ? ['All-rounder'] : updated };
   });
 
   const handleSave = async () => {
@@ -181,7 +183,7 @@ export default function PlayersPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-white text-sm font-medium truncate">{p.name}</div>
-                        <div className="flex gap-1 mt-0.5 flex-wrap">{p.skills?.slice(0, 2).map(s => <SkillBadge key={s} skill={s} />)}</div>
+                        <div className="flex gap-1 mt-0.5 flex-wrap">{displaySkills(p.skills).slice(0, 2).map(s => <SkillBadge key={s} skill={s} />)}</div>
                         <div className="text-white/30 text-xs mt-0.5 capitalize">
                           {p.status}{p.soldTo?.name ? ` · ${p.soldTo.name}` : ''}{p.soldPrice ? ` · ${p.soldPrice}pts` : ''}
                         </div>
@@ -212,7 +214,7 @@ export default function PlayersPage() {
                       {filtered.map(p => (
                         <tr key={p._id} className="border-b border-[#c9a227]/8 hover:bg-[#c9a227]/5 transition-colors">
                           <td className="px-6 py-3 text-white font-medium">{p.name}</td>
-                          <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{p.skills?.map(s => <SkillBadge key={s} skill={s} />)}</div></td>
+                          <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{displaySkills(p.skills).map(s => <SkillBadge key={s} skill={s} />)}</div></td>
                           <td className="px-4 py-3 text-white/40">{p.basePrice}</td>
                           <td className="px-4 py-3 text-white/50 capitalize">{p.status}</td>
                           <td className="px-4 py-3 text-white/30">{p.soldTo?.name || '—'}</td>

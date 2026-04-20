@@ -11,6 +11,7 @@ import Spinner from '@/components/Spinner';
 import Logo from '@/components/Logo';
 import AuctionTimer from '@/components/AuctionTimer';
 import { playBidSound, playSoldSound, playUnsoldSound, playTimerUrgentSound } from '@/lib/sounds';
+import { displaySkills } from '@/lib/skills';
 
 export default function CaptainDashboard() {
   const { user, logout } = useAuth();
@@ -98,7 +99,7 @@ export default function CaptainDashboard() {
     socket.on('auction:resale', () => { loadData(); });
     socket.on('auction:timer', (data) => {
       setTimer(data);
-      if (!data.paused && data.remaining <= 5 && data.remaining > 0) playTimerUrgentSound();
+      // Timer sounds disabled
     });
     return () => {
       socket.off('connect');
@@ -121,8 +122,8 @@ export default function CaptainDashboard() {
     if (res?.error) toast(res.error, 'error');
   };
 
-  const canBid = activeSession && team && team.budget >= (activeSession.currentBid + 10) && team.playerCount < 7;
   const isLeading = activeSession?.currentHighestBidder?.toString() === team?._id?.toString();
+  const canBid = activeSession && team && team.budget >= (activeSession.currentBid + 10) && team.playerCount < 7 && !isLeading;
   const budgetPct = team ? Math.round((team.pointsSpent / 1000) * 100) : 0;
   const remaining = team && activeSession ? team.budget - (activeSession.currentBid + 10) : null;
 
@@ -256,13 +257,13 @@ export default function CaptainDashboard() {
                 {/* Player info — bottom overlay */}
                 <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-6">
                   <p className="text-[#c9a227] text-[10px] uppercase tracking-[0.2em] font-bold mb-1 opacity-90">
-                    {activePlayer.skills?.[0] || 'Player'}
+                    {displaySkills(activePlayer.skills)[0] || 'Player'}
                   </p>
                   <h1 className="text-3xl sm:text-4xl lg:text-4xl font-black text-white uppercase leading-none tracking-tight mb-2">
                     {activePlayer.name}
                   </h1>
                   <div className="flex flex-wrap gap-1.5">
-                    {activePlayer.skills?.map(s => <SkillBadge key={s} skill={s} />)}
+                    {displaySkills(activePlayer.skills).map(s => <SkillBadge key={s} skill={s} />)}
                   </div>
                 </div>
               </div>
@@ -270,12 +271,7 @@ export default function CaptainDashboard() {
               {/* BID CONTROL STRIP */}
               <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
 
-                {/* Timer bar */}
-                {timer.remaining !== null && (
-                  <div className="px-5 pt-3 pb-0">
-                    <AuctionTimer remaining={timer.remaining} paused={timer.paused} size="md" />
-                  </div>
-                )}
+                {/* Timer bar — removed */}
 
                 {/* Current bid + leading */}
                 <div className="flex items-center justify-between px-5 py-3 border-b border-[#c9a227]/10">
@@ -337,7 +333,9 @@ export default function CaptainDashboard() {
                     <p className="mt-2 text-center text-white/40 text-xs">
                       {team?.playerCount >= 7
                         ? 'Squad full (7/7 players)'
-                        : `Need ${activeSession.currentBid + 10} pts · have ${team?.budget}`}
+                        : isLeading
+                          ? 'You are leading — wait for another bid'
+                          : `Need ${activeSession.currentBid + 10} pts · have ${team?.budget}`}
                     </p>
                   )}
                 </div>

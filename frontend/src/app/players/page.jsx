@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Logo from '@/components/Logo';
 import SkillBadge from '@/components/SkillBadge';
 import Spinner from '@/components/Spinner';
+import { displaySkills } from '@/lib/skills';
 
 function PlayerPhoto({ src, alt }) {
   const [err, setErr] = useState(false);
@@ -181,7 +182,7 @@ export default function PlayersPage() {
                 {/* Info */}
                 <div className="p-2.5 space-y-2">
                   <div className="flex flex-wrap gap-1">
-                    {p.skills?.slice(0, 2).map(s => <SkillBadge key={s} skill={s} />)}
+                    {displaySkills(p.skills).slice(0, 2).map(s => <SkillBadge key={s} skill={s} />)}
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
