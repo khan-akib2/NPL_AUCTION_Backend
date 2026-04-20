@@ -2,8 +2,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
-const storage = typeof window !== 'undefined' ? window.sessionStorage : null;
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+const storage = typeof window !== 'undefined' ? window.sessionStorage : null;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -14,10 +14,8 @@ export function AuthProvider({ children }) {
     const t = storage?.getItem('token');
     const u = storage?.getItem('user');
     if (t && u) {
-      /* eslint-disable react-hooks/set-state-in-effect */
       setToken(t);
       setUser(JSON.parse(u));
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
     setLoading(false);
   }, []);
@@ -44,6 +42,25 @@ export function AuthProvider({ children }) {
     storage?.removeItem('token');
     storage?.removeItem('user');
   };
+
+  // Clear session on tab/browser close — use pagehide for reliability
+  useEffect(() => {
+    const handleUnload = () => {
+      const t = storage?.getItem('token');
+      if (t) {
+        navigator.sendBeacon(
+          `${BACKEND_URL}/api/auth/logout-beacon`,
+          JSON.stringify({ token: t })
+        );
+      }
+    };
+    window.addEventListener('pagehide', handleUnload);
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      window.removeEventListener('pagehide', handleUnload);
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, loading }}>

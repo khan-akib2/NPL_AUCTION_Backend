@@ -30,7 +30,7 @@ export default function AuctionControl() {
 
   const loadData = useCallback(async () => {
     const [pRes, sRes, tRes] = await Promise.all([
-      request('/api/players?pageSize=100'),
+      request('/api/players?pageSize=500'),
       request('/api/auction/active'),
       request('/api/teams'),
     ]);

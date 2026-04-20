@@ -18,9 +18,15 @@ export function useApi() {
         ...options.headers,
       },
     });
-    // Return null on 401 but don't force logout — the session is per-tab
-    // and the token is still valid; a 401 here is likely a race condition
-    if (res.status === 401) return null;
+    if (res.status === 401) {
+      // Token invalid/expired — force logout
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem('token');
+        window.sessionStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+      return null;
+    }
     return res.json();
   };
 

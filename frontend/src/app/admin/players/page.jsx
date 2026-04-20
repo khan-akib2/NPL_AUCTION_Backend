@@ -80,7 +80,7 @@ export default function PlayersPage() {
 
   const load = async () => {
     setLoading(true);
-    const res = await request('/api/players?pageSize=200');
+    const res = await request('/api/players?pageSize=500');
     if (res) setPlayers(res.players || []);
     setLoading(false);
   };

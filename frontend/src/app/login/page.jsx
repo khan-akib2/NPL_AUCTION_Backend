@@ -18,7 +18,7 @@ export default function LoginPage() {
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setLoading(true);
     try {
       const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
@@ -42,7 +42,7 @@ export default function LoginPage() {
 
       {/* Left branding panel — desktop only */}
       <div className="hidden lg:flex flex-col w-[45%] bg-[#0d1e3a] border-r border-[#c9a227]/20 p-10 relative overflow-hidden">
-        <Image src="/NPL.png" alt="" fill priority sizes="45vw"
+        <Image src="/NPL.png" alt="" fill priority loading="eager" sizes="45vw"
           className="object-cover opacity-15 pointer-events-none" />
         <div className="absolute inset-0 bg-[#0d1e3a]/50 pointer-events-none" />
 
@@ -121,17 +121,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-[#c9a227]/10 space-y-2">
-            <p className="text-white/20 text-xs mb-2">Demo credentials</p>
-            <div className="flex items-center justify-between bg-[#0d1e3a] border border-[#c9a227]/10 rounded-lg px-3 py-2">
-              <span className="text-white/30 text-xs">Admin</span>
-              <span className="text-white/40 text-xs font-mono">admin@nit.com / admin123</span>
-            </div>
-            <div className="flex items-center justify-between bg-[#0d1e3a] border border-[#c9a227]/10 rounded-lg px-3 py-2">
-              <span className="text-white/30 text-xs">Captain</span>
-              <span className="text-white/40 text-xs font-mono">captain1@nit.com / captain1</span>
-            </div>
-            <div className="text-center pt-1">
+          <div className="mt-6 pt-5 border-t border-[#c9a227]/10">
+            <div className="text-center">
               <a href="/audience" className="text-[#c9a227]/30 hover:text-[#c9a227] text-xs transition-colors">
                 Watch live auction →
               </a>

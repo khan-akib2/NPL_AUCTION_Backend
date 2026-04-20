@@ -23,7 +23,7 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const { page = 1, pageSize = 10, status } = req.query;
     const p = Math.max(1, parseInt(page));
-    const ps = Math.min(200, parseInt(pageSize));
+    const ps = Math.min(500, parseInt(pageSize));
 
     let query = req.user.role === 'captain' ? { status: { $in: ['available', 'resold'] } } : {};
     if (status && status !== 'all') query = { ...query, status };

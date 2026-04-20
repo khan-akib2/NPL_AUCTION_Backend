@@ -50,6 +50,7 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '10mb' }));
+app.use(express.text({ type: 'text/plain' })); // for sendBeacon logout
 
 // Serve uploaded player photos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

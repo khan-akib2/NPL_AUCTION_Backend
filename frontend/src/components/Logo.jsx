@@ -14,6 +14,8 @@ export default function Logo({ size = 'md', className = '' }) {
       alt="NPL Logo"
       width={96}
       height={96}
+      priority
+      loading="eager"
       className={`${sizes[size]} object-contain ${className}`}
     />
   );

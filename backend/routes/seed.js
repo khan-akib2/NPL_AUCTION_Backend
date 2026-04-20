@@ -30,8 +30,8 @@ router.get('/', async (req, res) => {
     await Team.deleteMany({});
     await Player.deleteMany({});
 
-    const adminHash = await bcrypt.hash('admin123', 10);
-    await User.create({ name: 'Admin', email: 'admin@nit.com', passwordHash: adminHash, role: 'admin' });
+    const adminHash = await bcrypt.hash('7946', 10);
+    await User.create({ name: 'Admin', email: 'aaddy@gmail.com', passwordHash: adminHash, role: 'admin' });
 
     for (let i = 0; i < 8; i++) {
       const captainHash = await bcrypt.hash(`captain${i + 1}`, 10);

@@ -17,14 +17,12 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Single session — reject if already logged in
+    // Block if already logged in
     if (user.activeToken) {
       return res.status(409).json({ error: 'Already logged in on another device. Please log out first.' });
     }
 
     const token = signToken({ id: user._id, role: user.role, teamId: user.teamId?._id || null });
-
-    // Save active token
     await User.findByIdAndUpdate(user._id, { activeToken: token });
 
     res.json({
@@ -40,6 +38,24 @@ router.post('/login', async (req, res) => {
 router.post('/logout', authMiddleware, async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.user.id, { activeToken: null });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/auth/logout-beacon — called by sendBeacon on tab close (no auth header)
+router.post('/logout-beacon', async (req, res) => {
+  try {
+    let token = req.body?.token;
+    // sendBeacon sends text/plain sometimes — parse manually
+    if (!token && req.headers['content-type']?.includes('text/plain')) {
+      try { token = JSON.parse(req.body)?.token; } catch { /* ignore */ }
+    }
+    if (!token) return res.status(400).json({ error: 'No token' });
+    const { verifyToken } = await import('../lib/auth.js');
+    const decoded = verifyToken(token);
+    if (decoded?.id) await User.findByIdAndUpdate(decoded.id, { activeToken: null });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
