@@ -157,11 +157,17 @@ export default function AuctionControl() {
   };
 
   const triggerResale = async (playerId, playerName) => {
-    setActionLoading(true);
+    // Optimistic: remove from resale candidates immediately
+    setPlayers(prev => prev.map(p => p._id === playerId ? { ...p, status: 'resold', soldTo: null, soldPrice: null } : p));
     const res = await request('/api/auction/resale', { method: 'POST', body: JSON.stringify({ playerId }) });
-    setActionLoading(false);
-    if (res?.error) toast(res.error, 'error');
-    else { toast(`${playerName} sent back to queue`, 'success'); loadData(); }
+    if (res?.error) {
+      toast(res.error, 'error');
+      loadData(); // revert on error
+    } else {
+      toast(`${playerName} back in queue`, 'success');
+      // Sync teams budget optimistically
+      if (res.team) setTeams(prev => prev.map(t => t._id === res.team._id?.toString() ? { ...t, budget: res.team.budget, pointsSpent: res.team.pointsSpent, playerCount: res.team.playerCount, players: res.team.players } : t));
+    }
   };
 
   const available = players
@@ -169,10 +175,14 @@ export default function AuctionControl() {
     .filter(p => !queueSearch.trim() || p.name.toLowerCase().includes(queueSearch.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // For each team that has sold players, find the highest-priced one
+  // For each team, show only their single highest-priced sold player
   const resaleCandidates = teams
     .map(t => {
-      const soldPlayers = players.filter(p => p.status === 'sold' && p.soldTo?._id?.toString() === t._id?.toString() || p.soldTo?.toString() === t._id?.toString());
+      const teamId = t._id?.toString();
+      const soldPlayers = players.filter(p =>
+        p.status === 'sold' &&
+        (p.soldTo?._id?.toString() === teamId || p.soldTo?.toString() === teamId)
+      );
       if (!soldPlayers.length) return null;
       const highest = soldPlayers.reduce((a, b) => (a.soldPrice || 0) > (b.soldPrice || 0) ? a : b);
       return { team: t, player: highest };

@@ -107,9 +107,12 @@ router.post('/start', authMiddleware, adminOnly, async (req, res) => {
 // POST /api/auction/bid
 router.post('/bid', authMiddleware, captainOnly, async (req, res) => {
   try {
-    const { sessionId } = req.body;
+    const { sessionId, bidAmount = 10 } = req.body;
     if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
     if (!req.user.teamId) return res.status(400).json({ error: 'No team assigned to your account' });
+
+    const VALID_AMOUNTS = [1, 3, 5, 10];
+    const amount = VALID_AMOUNTS.includes(Number(bidAmount)) ? Number(bidAmount) : 10;
 
     const session = await AuctionSession.findById(sessionId);
     if (!session || session.status !== 'active') return res.status(400).json({ error: 'No active auction' });
@@ -122,14 +125,13 @@ router.post('/bid', authMiddleware, captainOnly, async (req, res) => {
     if (session.currentHighestBidder?.toString() === team._id.toString())
       return res.status(400).json({ error: 'You are already leading — wait for another team to bid' });
 
-    const newBid = session.currentBid + 10;
+    const newBid = session.currentBid + amount;
     if (team.budget < newBid) return res.status(400).json({ error: 'Insufficient budget' });
 
     session.currentBid = newBid;
     session.currentHighestBidder = team._id;
     session.currentHighestBidderName = team.name;
     session.bids.push({ teamId: team._id, teamName: team.name, amount: newBid });
-    // Do NOT reset timer on bid — timer only resumes manually
     await session.save();
     await AuctionLog.create({ playerId: session.playerId, teamId: team._id, action: 'bid', amount: newBid });
 
@@ -233,8 +235,7 @@ router.post('/resale', authMiddleware, adminOnly, async (req, res) => {
     const updatedTeam = await Team.findById(teamId).populate('players');
     const io = getIO();
     if (io) io.emit('auction:resale', { player, team: updatedTeam });
-    res.json({ player, team: updatedTeam });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    res.json({ player, team: updatedTeam });  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST /api/auction/reveal — captain uses a reveal token to see mystery player details

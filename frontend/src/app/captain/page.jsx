@@ -133,10 +133,10 @@ export default function CaptainDashboard() {
     };
   }, [socket, toast, team, loadData]);
 
-  const placeBid = async () => {
+  const placeBid = async (bidAmount = 10) => {
     if (!activeSession) return;
     setBidding(true);
-    const res = await request('/api/auction/bid', { method: 'POST', body: JSON.stringify({ sessionId: activeSession._id }) });
+    const res = await request('/api/auction/bid', { method: 'POST', body: JSON.stringify({ sessionId: activeSession._id, bidAmount }) });
     setBidding(false);
     if (res?.error) toast(res.error, 'error');
   };
@@ -155,9 +155,8 @@ export default function CaptainDashboard() {
   };
 
   const isLeading = activeSession?.currentHighestBidder?.toString() === team?._id?.toString();
-  const canBid = activeSession && team && team.budget >= (activeSession.currentBid + 10) && team.playerCount < 7 && !isLeading;
+  const canBid = activeSession && team && team.playerCount < 7 && !isLeading;
   const budgetPct = team ? Math.round((team.pointsSpent / 1000) * 100) : 0;
-  const remaining = team && activeSession ? team.budget - (activeSession.currentBid + 10) : null;
 
   // Budget alert thresholds
   const budgetCritical = team && team.budget <= 50;
@@ -361,45 +360,43 @@ export default function CaptainDashboard() {
                   </div>
                 </div>
 
-                {/* Budget impact row */}
-                <div className="grid grid-cols-3 divide-x divide-[#c9a227]/10 border-b border-[#c9a227]/10">
+                {/* Budget row */}
+                <div className="grid grid-cols-2 divide-x divide-[#c9a227]/10 border-b border-[#c9a227]/10">
                   <div className="px-3 py-2 text-center">
                     <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Your Budget</p>
                     <p className="text-white/80 text-sm font-bold tabular-nums">{team?.budget ?? '—'} pts</p>
                   </div>
                   <div className="px-3 py-2 text-center">
-                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Next Bid</p>
-                    <p className="text-[#c9a227] text-sm font-bold tabular-nums">{activeSession.currentBid + 10} pts</p>
-                  </div>
-                  <div className="px-3 py-2 text-center">
-                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">After Bid</p>
-                    <p className={`text-sm font-bold tabular-nums ${remaining !== null && remaining < 0 ? 'text-red-400' : 'text-white/80'}`}>
-                      {remaining !== null ? remaining : '—'} pts
-                    </p>
+                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Current Bid</p>
+                    <p className="text-[#c9a227] text-sm font-bold tabular-nums">{activeSession.currentBid} pts</p>
                   </div>
                 </div>
 
-                {/* Bid button */}
-                <div className="p-3">
-                  <button
-                    onClick={placeBid}
-                    disabled={!canBid || bidding}
-                    className="w-full bg-[#c9a227] text-[#0a1628] font-black py-3 rounded-xl text-base transition-all hover:bg-[#f0c040] disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#c9a227]/20 active:scale-[0.98]"
-                  >
-                    {bidding ? <Spinner size="sm" /> : (
-                      <>
-                        <span className="text-lg">↑</span>
-                        <span>Place Bid · {activeSession.currentBid + 10} pts</span>
-                      </>
-                    )}
-                  </button>
+                {/* Bid buttons — 1, 3, 5, 10 pts */}
+                <div className="p-3 space-y-2">
+                  <div className="grid grid-cols-4 gap-2">
+                    {[1, 3, 5, 10].map(amt => {
+                      const nextBid = activeSession.currentBid + amt;
+                      const canBidAmt = canBid && team.budget >= nextBid;
+                      return (
+                        <button key={amt}
+                          onClick={() => placeBid(amt)}
+                          disabled={!canBidAmt || bidding}
+                          className="bg-[#c9a227] text-[#0a1628] font-black py-3 rounded-xl text-sm hover:bg-[#f0c040] disabled:opacity-25 disabled:cursor-not-allowed flex flex-col items-center justify-center transition-all active:scale-[0.97] shadow-lg shadow-[#c9a227]/10">
+                          <span className="text-xs font-black leading-none">+{amt}</span>
+                          <span className="text-[10px] font-semibold opacity-70 mt-0.5">{nextBid}pts</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {bidding && <div className="flex justify-center pt-1"><Spinner size="sm" /></div>}
                   {!canBid && activeSession && (
-                    <p className="mt-2 text-center text-white/40 text-xs">
+                    <p className="text-center text-white/40 text-xs">
                       {team?.playerCount >= 7
                         ? 'Squad full (7/7 players)'
                         : isLeading
                           ? 'You are leading — wait for another bid'
-                          : `Need ${activeSession.currentBid + 10} pts · have ${team?.budget}`}
+                          : `Insufficient budget`}
                     </p>
                   )}
                 </div>
