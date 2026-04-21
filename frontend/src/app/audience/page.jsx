@@ -6,6 +6,8 @@ import Image from 'next/image';
 import SkillBadge from '@/components/SkillBadge';
 import Logo from '@/components/Logo';
 import AuctionTimer from '@/components/AuctionTimer';
+import MysteryPlayerCard from '@/components/MysteryPlayerCard';
+import MysteryRevealOverlay from '@/components/MysteryRevealOverlay';
 import { playBidSound, playSoldSound, playUnsoldSound, playTimerUrgentSound } from '@/lib/sounds';
 import { displaySkills } from '@/lib/skills';
 
@@ -21,6 +23,7 @@ export default function AudiencePage() {
   const [tab, setTab] = useState('auction');
   const [viewerCount, setViewerCount] = useState(0);
   const [timer, setTimer] = useState({ remaining: null, paused: false });
+  const [mysteryReveal, setMysteryReveal] = useState(null); // { player, teamName }
 
   const fetchTeams = useCallback(() =>
     fetch(`${BACKEND_URL}/api/teams-public`).then(r => r.json()).then(d => setTeams(d.teams || [])),
@@ -87,13 +90,18 @@ export default function AudiencePage() {
       setTimer(data);
       // Timer sounds disabled
     });
-    s.on('auction:sold', () => {
+    s.on('auction:sold', ({ player, team }) => {
       setActiveSession(null); setActivePlayer(null); setBidHistory([]);
       setTimer({ remaining: null, paused: false });
       playSoldSound();
-      import('canvas-confetti').then(({ default: confetti }) => {
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.55 }, colors: ['#c9a227', '#f0c040', '#ffffff', '#ffd700'] });
-      });
+      // If mystery player — show reveal overlay to audience
+      if (player?.isMysteryPlayer) {
+        setMysteryReveal({ player, teamName: team?.name || '' });
+      } else {
+        import('canvas-confetti').then(({ default: confetti }) => {
+          confetti({ particleCount: 200, spread: 100, origin: { y: 0.55 }, colors: ['#c9a227', '#f0c040', '#ffffff', '#ffd700'] });
+        });
+      }
       fetchTeams();
     });
     s.on('auction:unsold', () => { setActiveSession(null); setActivePlayer(null); setBidHistory([]); setTimer({ remaining: null, paused: false }); playUnsoldSound(); });
@@ -148,6 +156,12 @@ export default function AudiencePage() {
 
                 {/* LEFT: Player card + bid info */}
                 <div className="flex-1 min-w-0 flex flex-col gap-3">
+                  {/* Mystery or normal player card */}
+                  {activePlayer.isMysteryPlayer && activePlayer._isMasked ? (
+                    <div className="flex-1" style={{ minHeight: '360px' }}>
+                      <MysteryPlayerCard player={activePlayer} revealTokens={null} />
+                    </div>
+                  ) : (
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl flex-1" style={{ minHeight: '360px' }}>
                     {activePlayer.photo ? (
                       <>
@@ -188,6 +202,7 @@ export default function AudiencePage() {
                       <div className="flex flex-wrap gap-2">{displaySkills(activePlayer.skills).map(s => <SkillBadge key={s} skill={s} />)}</div>
                     </div>
                   </div>
+                  )} {/* end mystery/normal */}
 
                   {/* Bid strip */}
                   <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
@@ -294,6 +309,72 @@ export default function AudiencePage() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         <span className="text-xs font-medium">Home</span>
       </button>
+
+      {/* Mystery reveal overlay — shown to audience after mystery player is sold */}
+      {mysteryReveal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}>
+          <div className="flex flex-col items-center gap-5 px-6 max-w-sm w-full text-center"
+            style={{ animation: 'fadeInUp 0.5s ease forwards' }}>
+            <div className="flex items-center gap-2 bg-purple-500/20 border border-purple-500/40 rounded-full px-4 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              <span className="text-purple-300 text-xs font-black uppercase tracking-wider">Mystery Revealed!</span>
+            </div>
+
+            <div className="relative w-40 h-40 rounded-2xl overflow-hidden border-2 border-[#c9a227]/60 shadow-2xl shadow-[#c9a227]/20">
+              {mysteryReveal.player.photo ? (
+                <Image src={mysteryReveal.player.photo} alt={mysteryReveal.player.name} fill unoptimized
+                  className="object-cover" style={{ objectPosition: '50% 20%' }} />
+              ) : (
+                <div className="w-full h-full bg-[#0d1e3a] flex items-center justify-center">
+                  <svg className="w-16 h-16 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="text-[#c9a227]/60 text-xs uppercase tracking-widest mb-1">The mystery player was</p>
+              <h2 className="text-3xl font-black text-white uppercase leading-tight">{mysteryReveal.player.name}</h2>
+            </div>
+
+            {/* Skills */}
+            {mysteryReveal.player.skills?.length > 0 && (
+              <div className="flex flex-wrap gap-2 justify-center">
+                {displaySkills(mysteryReveal.player.skills).map(s => (
+                  <span key={s} className="text-xs px-3 py-1 rounded-lg font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 bg-[#c9a227]/10 border border-[#c9a227]/25 rounded-xl px-4 py-2.5">
+              <span className="text-white/40 text-sm">Sold to</span>
+              <span className="text-[#c9a227] font-black text-base">{mysteryReveal.teamName}</span>
+              <span className="text-white/40 text-sm">for</span>
+              <span className="text-white font-black text-base">{mysteryReveal.player.soldPrice} pts</span>
+            </div>
+
+            <button
+              onClick={() => {
+                setMysteryReveal(null);
+                import('canvas-confetti').then(({ default: confetti }) => {
+                  confetti({ particleCount: 200, spread: 100, origin: { y: 0.55 }, colors: ['#c9a227', '#f0c040', '#ffffff', '#ffd700'] });
+                });
+              }}
+              className="bg-[#c9a227] text-[#0a1628] font-black px-8 py-3 rounded-xl text-sm hover:bg-[#f0c040] transition-colors">
+              Continue
+            </button>
+          </div>
+          <style>{`
+            @keyframes fadeInUp {
+              from { opacity: 0; transform: translateY(24px) scale(0.95); }
+              to   { opacity: 1; transform: translateY(0) scale(1); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }

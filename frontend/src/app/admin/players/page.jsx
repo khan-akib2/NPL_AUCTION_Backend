@@ -16,7 +16,42 @@ const STATUS_COLORS = {
   unsold: 'bg-white/10 text-white/40 border-white/20',
   resold: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
 };
-const emptyForm = { name: '', photo: '', skills: [], gender: 'Male', basePrice: 50, status: 'available' };
+const emptyForm = {
+  name: '', photo: '', skills: [], gender: 'Male', basePrice: 50, status: 'available',
+  isMysteryPlayer: false,
+  mysteryConfig: { roleHint: '', ratingRange: '', formStatus: '', region: '', isStar: false, isBust: false, deceptionLevel: 'low', blurredPhoto: '' },
+};
+
+const ROLE_OPTIONS = ['Batsman', 'Bowler', 'All-rounder', 'Wicketkeeper', 'Fielder'];
+
+function RoleSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full bg-[#0a1628] border border-purple-500/20 rounded-lg px-3 py-2.5 text-sm text-left flex items-center justify-between focus:outline-none hover:border-purple-500/40 transition-colors">
+        <span className={value ? 'text-white' : 'text-white/30'}>{value || '— None —'}</span>
+        <svg className={`w-4 h-4 text-white/30 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute z-50 w-full mt-1 bg-[#0d1e3a] border border-purple-500/25 rounded-xl overflow-hidden shadow-2xl">
+          <button type="button" onClick={() => { onChange(''); setOpen(false); }}
+            className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-purple-500/10 ${!value ? 'text-purple-300' : 'text-white/40'}`}>
+            — None —
+          </button>
+          {ROLE_OPTIONS.map(r => (
+            <button key={r} type="button" onClick={() => { onChange(r); setOpen(false); }}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-purple-500/10 ${value === r ? 'text-purple-300 bg-purple-500/10' : 'text-white/70'}`}>
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PlayerPhoto({ src, alt }) {
   const [err, setErr] = useState(false);
@@ -195,7 +230,20 @@ export default function PlayersPage() {
   };
 
   const handleEdit = p => {
-    setForm({ name: p.name, photo: p.photo || '', skills: p.skills || [], gender: p.gender || 'Male', basePrice: p.basePrice });
+    setForm({
+      name: p.name, photo: p.photo || '', skills: p.skills || [], gender: p.gender || 'Male', basePrice: p.basePrice,
+      isMysteryPlayer: p.isMysteryPlayer || false,
+      mysteryConfig: {
+        roleHint: p.mysteryConfig?.roleHint || '',
+        ratingRange: p.mysteryConfig?.ratingRange || '',
+        formStatus: p.mysteryConfig?.formStatus || '',
+        region: p.mysteryConfig?.region || '',
+        isStar: p.mysteryConfig?.isStar || false,
+        isBust: p.mysteryConfig?.isBust || false,
+        deceptionLevel: p.mysteryConfig?.deceptionLevel || 'low',
+        blurredPhoto: p.mysteryConfig?.blurredPhoto || '',
+      },
+    });
     setEditId(p._id);
     setShowForm(true);
   };
@@ -312,7 +360,12 @@ export default function PlayersPage() {
                     <tbody>
                       {filtered.map(p => (
                         <tr key={p._id} className="border-b border-[#c9a227]/8 hover:bg-[#c9a227]/5 transition-colors">
-                          <td className="px-6 py-3 text-white font-medium">{p.name}</td>
+                          <td className="px-6 py-3 text-white font-medium">
+                            <div className="flex items-center gap-2">
+                              {p.isMysteryPlayer && <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">Mystery</span>}
+                              {p.name}
+                            </div>
+                          </td>
                           <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{displaySkills(p.skills).map(s => <SkillBadge key={s} skill={s} />)}</div></td>
                           <td className="px-4 py-3">
                             {p.gender && <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${p.gender === 'Female' ? 'bg-pink-500/20 text-pink-400' : 'bg-blue-500/20 text-blue-400'}`}>{p.gender}</span>}
@@ -387,6 +440,37 @@ export default function PlayersPage() {
                 <input type="number" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: Number(e.target.value) }))}
                   className="w-full bg-[#0a1628] border border-[#c9a227]/20 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#c9a227]/50" />
               </div>
+
+              {/* Mystery Player Toggle */}
+              <div className="border-t border-[#c9a227]/10 pt-4">
+                <button type="button" onClick={() => setForm(f => ({ ...f, isMysteryPlayer: !f.isMysteryPlayer }))}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${form.isMysteryPlayer ? 'bg-purple-500/15 border-purple-500/40 text-purple-300' : 'bg-[#0a1628] border-[#c9a227]/15 text-white/40 hover:text-white/60'}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎭</span>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold">Mystery Player</p>
+                      <p className="text-xs opacity-60">Hide identity during auction</p>
+                    </div>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full transition-colors relative ${form.isMysteryPlayer ? 'bg-purple-500' : 'bg-white/10'}`}>
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${form.isMysteryPlayer ? 'left-5' : 'left-0.5'}`} />
+                  </div>
+                </button>
+              </div>
+
+              {/* Mystery Config — only shown when isMysteryPlayer is true */}
+              {form.isMysteryPlayer && (
+                <div className="bg-purple-500/8 border border-purple-500/20 rounded-xl p-4">
+                  <div>
+                    <label className="text-xs text-white/30 mb-1.5 block">Role Hint</label>
+                    <RoleSelect
+                      value={form.mysteryConfig.roleHint}
+                      onChange={v => setForm(f => ({ ...f, mysteryConfig: { ...f.mysteryConfig, roleHint: v } }))}
+                    />
+                    <p className="text-white/20 text-[10px] mt-1">Shown to captains as a clue during bidding</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setShowForm(false); setEditId(null); }}

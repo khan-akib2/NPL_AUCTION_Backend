@@ -35,7 +35,21 @@ router.get('/', authMiddleware, async (req, res) => {
       .skip((p - 1) * ps)
       .limit(ps);
 
-    res.json({ players, total, page: p, pageSize: ps });
+    // For captains: mask mystery player details (except ones their team revealed)
+    let result = players;
+    if (req.user.role === 'captain' && req.user.teamId) {
+      result = players.map(pl => {
+        if (!pl.isMysteryPlayer) return pl.toObject();
+        const isRevealed = pl.revealedTo?.some(id => id.toString() === req.user.teamId.toString());
+        if (isRevealed) return pl.toObject();
+        const obj = pl.toObject();
+        return { ...obj, name: '???', photo: obj.mysteryConfig?.blurredPhoto || '', skills: obj.mysteryConfig?.roleHint ? [obj.mysteryConfig.roleHint] : [], _isMasked: true };
+      });
+    } else {
+      result = players.map(pl => pl.toObject());
+    }
+
+    res.json({ players: result, total, page: p, pageSize: ps });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

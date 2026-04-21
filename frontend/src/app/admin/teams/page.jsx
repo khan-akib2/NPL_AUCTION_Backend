@@ -156,6 +156,15 @@ export default function TeamsPage() {
     });
   };
 
+  const handleAddToken = async (teamId, teamName) => {
+    const res = await request(`/api/teams/${teamId}/add-token`, { method: 'POST' });
+    if (res?.error) toast(res.error, 'error');
+    else {
+      toast(`+1 reveal token → ${teamName}`, 'success');
+      setTeams(prev => prev.map(t => t._id === teamId ? { ...t, revealTokens: (t.revealTokens || 0) + 1 } : t));
+    }
+  };
+
   const handleDelete = (id) => {
     setConfirmModal({
       title: 'Delete Team',
@@ -235,6 +244,25 @@ export default function TeamsPage() {
                       <div className="flex items-center justify-between text-xs text-white/40 mb-4">
                         <span>{team.playerCount}/7 players</span>
                         <span>{pct}% spent</span>
+                      </div>
+
+                      {/* Reveal tokens */}
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-purple-400/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span className="text-white/40 text-xs">Reveal tokens:</span>
+                          <span className={`text-xs font-bold tabular-nums ${(team.revealTokens || 0) > 0 ? 'text-purple-400' : 'text-white/20'}`}>
+                            {team.revealTokens ?? 0}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleAddToken(team._id, team.name)}
+                          className="text-[10px] font-bold px-2 py-1 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-400 hover:bg-purple-500/25 transition-colors">
+                          + Token
+                        </button>
                       </div>
 
                       {/* Actions */}

@@ -156,19 +156,29 @@ export default function AuctionControl() {
     if (res?.error) { toast(res.error, 'error'); setTimer(t => ({ ...t, paused: true })); }
   };
 
-  const triggerResale = async (teamId) => {
+  const triggerResale = async (playerId, playerName) => {
     setActionLoading(true);
-    const res = await request('/api/auction/resale', { method: 'POST', body: JSON.stringify({ teamId }) });
+    const res = await request('/api/auction/resale', { method: 'POST', body: JSON.stringify({ playerId }) });
     setActionLoading(false);
     if (res?.error) toast(res.error, 'error');
-    else { toast('Resale triggered', 'success'); loadData(); }
+    else { toast(`${playerName} sent back to queue`, 'success'); loadData(); }
   };
 
   const available = players
     .filter(p => ['available','resold','unsold'].includes(p.status))
     .filter(p => !queueSearch.trim() || p.name.toLowerCase().includes(queueSearch.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const resaleTeams = teams.filter(t => t.playerCount < 7 && t.players?.length > 0);
+
+  // For each team that has sold players, find the highest-priced one
+  const resaleCandidates = teams
+    .map(t => {
+      const soldPlayers = players.filter(p => p.status === 'sold' && p.soldTo?._id?.toString() === t._id?.toString() || p.soldTo?.toString() === t._id?.toString());
+      if (!soldPlayers.length) return null;
+      const highest = soldPlayers.reduce((a, b) => (a.soldPrice || 0) > (b.soldPrice || 0) ? a : b);
+      return { team: t, player: highest };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.player.soldPrice || 0) - (a.player.soldPrice || 0));
 
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner size="lg" /></div>;
 
@@ -223,7 +233,10 @@ export default function AuctionControl() {
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
                     selectedPlayer?._id === p._id ? 'bg-[#c9a227]/15 text-white' : 'text-white/50 hover:bg-[#c9a227]/8 hover:text-white/80'
                   }`}>
-                  <div className="font-medium text-sm">{p.name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{p.name}</span>
+                    {p.isMysteryPlayer && <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">Mystery</span>}
+                  </div>
                   <div className="text-xs text-white/40 mt-0.5">{displaySkills(p.skills).join(' · ')} · {p.basePrice}pts</div>
                   {p.status === 'resold' && <span className="text-[10px] text-orange-400/60 uppercase tracking-wider">Resold</span>}
                   {p.status === 'unsold' && <span className="text-[10px] text-red-400/60 uppercase tracking-wider">Unsold</span>}
@@ -283,6 +296,9 @@ export default function AuctionControl() {
                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${activePlayer.gender === 'Female' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
                           {activePlayer.gender}
                         </span>
+                      )}
+                      {activePlayer.isMysteryPlayer && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">Mystery</span>
                       )}
                     </div>
                     <h2 className="text-2xl lg:text-3xl font-black text-white uppercase leading-none tracking-tight mb-2">
@@ -353,23 +369,25 @@ export default function AuctionControl() {
             </div>
           </div>
 
-          {resaleTeams.length > 0 && (
+          {resaleCandidates.length > 0 && (
             <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl overflow-hidden shadow-2xl">
               <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
                 <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
                 <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
-                <span className="ml-2 text-white/20 text-xs">resale · {resaleTeams.length} teams</span>
+                <span className="ml-2 text-white/20 text-xs">resale · {resaleCandidates.length} players</span>
               </div>
               <div className="p-3 space-y-1.5">
-                {resaleTeams.map(t => (
-                  <div key={t._id} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-white/70">{t.name}</p>
-                      <p className="text-xs text-white/40">{t.budget} pts · {t.playerCount}/7</p>
+                {resaleCandidates.map(({ team: t, player: p }) => (
+                  <div key={p._id} className="flex items-center justify-between gap-2 bg-[#0a1628]/60 rounded-lg px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-sm text-white font-semibold truncate">{p.name}</p>
+                      <p className="text-xs text-white/40 truncate">{t.name} · <span className="text-[#c9a227]/70">{p.soldPrice} pts</span></p>
                     </div>
-                    <button onClick={() => triggerResale(t._id)}
-                      className="text-xs bg-[#c9a227]/8 border border-[#c9a227]/20 text-white/50 hover:text-white px-3 py-1.5 rounded-lg transition-colors">
+                    <button
+                      onClick={() => triggerResale(p._id, p.name)}
+                      disabled={actionLoading}
+                      className="shrink-0 text-xs bg-orange-500/10 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 hover:border-orange-500/50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40">
                       Trigger
                     </button>
                   </div>

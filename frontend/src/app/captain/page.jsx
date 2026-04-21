@@ -10,6 +10,8 @@ import SkillBadge from '@/components/SkillBadge';
 import Spinner from '@/components/Spinner';
 import Logo from '@/components/Logo';
 import AuctionTimer from '@/components/AuctionTimer';
+import MysteryPlayerCard from '@/components/MysteryPlayerCard';
+import MysteryRevealOverlay from '@/components/MysteryRevealOverlay';
 import { playBidSound, playSoldSound, playUnsoldSound, playTimerUrgentSound } from '@/lib/sounds';
 import { displaySkills } from '@/lib/skills';
 
@@ -30,6 +32,10 @@ export default function CaptainDashboard() {
   const [isConnected, setIsConnected] = useState(false);
   const [viewerCount, setViewerCount] = useState(0);
   const [timer, setTimer] = useState({ remaining: null, paused: false });
+  // Mystery state
+  const [revealing, setRevealing] = useState(false);
+  const [revealedPlayerIds, setRevealedPlayerIds] = useState(new Set()); // player IDs revealed by this team
+  const [revealOverlayPlayer, setRevealOverlayPlayer] = useState(null); // shown after winning mystery player
 
   const loadData = useCallback(async () => {
     const [teamRes, sessionRes] = await Promise.all([
@@ -82,14 +88,20 @@ export default function CaptainDashboard() {
     });
     socket.on('auction:sold', ({ player, team: soldTeam }) => {
       if (soldTeam._id?.toString() === team?._id?.toString()) {
-        toast(`Won: ${player.name}`, 'success');
         playSoldSound();
+        // If mystery player — show reveal overlay with full details
+        if (player.isMysteryPlayer) {
+          setRevealOverlayPlayer(player);
+        } else {
+          toast(`Won: ${player.name}`, 'success');
+        }
         // Confetti for winning team
         import('canvas-confetti').then(({ default: confetti }) => {
           confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 }, colors: ['#c9a227', '#f0c040', '#ffffff', '#ffd700'] });
         });
       } else {
-        toast(`${player.name} → ${soldTeam.name}`, 'info');
+        const displayName = player.isMysteryPlayer ? 'Mystery Player' : player.name;
+        toast(`${displayName} → ${soldTeam.name}`, 'info');
       }
       setActiveSession(null); setActivePlayer(null); setBidHistory([]);
       setTimer({ remaining: null, paused: false });
@@ -97,6 +109,12 @@ export default function CaptainDashboard() {
     });
     socket.on('auction:unsold', () => { setActiveSession(null); setActivePlayer(null); setBidHistory([]); setTimer({ remaining: null, paused: false }); playUnsoldSound(); });
     socket.on('auction:resale', () => { loadData(); });
+    socket.on('team:token_added', ({ teamId, revealTokens }) => {
+      setTeam(prev => {
+        if (!prev || prev._id?.toString() !== teamId) return prev;
+        return { ...prev, revealTokens };
+      });
+    });
     socket.on('auction:timer', (data) => {
       setTimer(data);
       // Timer sounds disabled
@@ -110,6 +128,7 @@ export default function CaptainDashboard() {
       socket.off('auction:sold');
       socket.off('auction:unsold');
       socket.off('auction:resale');
+      socket.off('team:token_added');
       socket.off('auction:timer');
     };
   }, [socket, toast, team, loadData]);
@@ -120,6 +139,19 @@ export default function CaptainDashboard() {
     const res = await request('/api/auction/bid', { method: 'POST', body: JSON.stringify({ sessionId: activeSession._id }) });
     setBidding(false);
     if (res?.error) toast(res.error, 'error');
+  };
+
+  const handleReveal = async () => {
+    if (!activePlayer?._id) return;
+    setRevealing(true);
+    const res = await request('/api/auction/reveal', { method: 'POST', body: JSON.stringify({ playerId: activePlayer._id }) });
+    setRevealing(false);
+    if (res?.error) { toast(res.error, 'error'); return; }
+    // Update local state: mark player as revealed, update token count, show full player data
+    setRevealedPlayerIds(prev => new Set([...prev, activePlayer._id]));
+    if (res.player) setActivePlayer(res.player);
+    if (res.tokensLeft !== undefined) setTeam(prev => prev ? { ...prev, revealTokens: res.tokensLeft } : prev);
+    toast('Player revealed!', 'success');
   };
 
   const isLeading = activeSession?.currentHighestBidder?.toString() === team?._id?.toString();
@@ -179,6 +211,15 @@ export default function CaptainDashboard() {
             <span className={`font-black text-sm tabular-nums ${budgetCritical ? 'text-red-400' : budgetLow ? 'text-orange-400' : 'text-[#c9a227]'}`}>{team?.budget ?? 0}</span>
             <span className="text-white/40 text-xs">pts</span>
           </div>
+          {(team?.revealTokens ?? 0) > 0 && (
+            <div className="flex items-center gap-1 bg-purple-500/15 border border-purple-500/30 rounded-lg px-2.5 py-1.5">
+              <svg className="w-3.5 h-3.5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span className="text-purple-300 font-bold text-xs tabular-nums">{team.revealTokens}</span>
+            </div>
+          )}
           <button onClick={() => { logout(); router.push('/login'); }} className="text-white/30 hover:text-white/60 text-xs transition-colors">
             Sign Out
           </button>
@@ -225,7 +266,16 @@ export default function CaptainDashboard() {
         <div className={`flex-1 min-w-0 flex flex-col gap-4 ${tab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
           {activeSession && activePlayer ? (
             <>
-              {/* HERO PLAYER CARD */}
+              {/* HERO PLAYER CARD — mystery or normal */}
+              {activePlayer.isMysteryPlayer && activePlayer._isMasked ? (
+                <MysteryPlayerCard
+                  player={activePlayer}
+                  revealTokens={team?.revealTokens ?? 0}
+                  onReveal={handleReveal}
+                  revealing={revealing}
+                  revealed={revealedPlayerIds.has(activePlayer._id)}
+                />
+              ) : (
               <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '420px', height: '55vh', maxHeight: '600px' }}>
 
                 {/* Full-bleed background photo */}
@@ -280,6 +330,7 @@ export default function CaptainDashboard() {
                   </div>
                 </div>
               </div>
+              )} {/* end mystery/normal conditional */}
 
               {/* BID CONTROL STRIP */}
               <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
@@ -431,6 +482,14 @@ export default function CaptainDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Mystery reveal overlay — shown to winning captain */}
+      {revealOverlayPlayer && (
+        <MysteryRevealOverlay
+          player={revealOverlayPlayer}
+          onClose={() => { setRevealOverlayPlayer(null); toast(`Won: ${revealOverlayPlayer.name}`, 'success'); }}
+        />
+      )}
     </div>
   );
 }

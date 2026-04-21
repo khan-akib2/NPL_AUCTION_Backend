@@ -82,6 +82,23 @@ router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// POST /api/teams/:id/add-token — admin gives 1 reveal token to a team
+router.post('/:id/add-token', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const team = await Team.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { revealTokens: 1 } },
+      { returnDocument: 'after' }
+    );
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+    const io = global._io;
+    if (io) io.emit('team:token_added', { teamId: team._id.toString(), revealTokens: team.revealTokens });
+    res.json({ team });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /api/teams/:teamId/remove-player/:playerId
 // Admin removes a specific player from a team — player goes back to resold queue
 import Player from '../models/Player.js';

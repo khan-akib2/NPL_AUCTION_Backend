@@ -8,6 +8,28 @@ import { authMiddleware, adminOnly, captainOnly } from '../lib/auth.js';
 const router = Router();
 const getIO = () => global._io;
 
+// Sanitize a player object for non-admin/non-owner views
+// For mystery players: hide name, photo, skills — show only clues
+function sanitizePlayerForPublic(player, revealedTeamId = null) {
+  if (!player || !player.isMysteryPlayer) return player;
+  const p = player.toObject ? player.toObject() : { ...player };
+  const isRevealed = revealedTeamId && p.revealedTo?.some(id => id.toString() === revealedTeamId.toString());
+  if (isRevealed) return p; // Full data for teams that used reveal token
+  // Return masked version
+  return {
+    ...p,
+    name: '???',
+    photo: p.mysteryConfig?.blurredPhoto || '',
+    skills: p.mysteryConfig?.roleHint ? [p.mysteryConfig.roleHint] : [],
+    _isMasked: true,
+  };
+}
+
+// Sanitize for admin — always full data
+function sanitizePlayerForAdmin(player) {
+  return player?.toObject ? player.toObject() : player;
+}
+
 // Server-side timer — one interval per active session
 let _timerInterval = null;
 
@@ -33,7 +55,17 @@ router.get('/active', authMiddleware, async (req, res) => {
       session.status = 'closed'; session.endedAt = new Date(); await session.save();
       return res.json({ session: null });
     }
-    res.json({ session });
+    if (!session) return res.json({ session: null });
+
+    const sessionObj = session.toObject();
+    if (req.user.role === 'admin') {
+      sessionObj.playerId = sanitizePlayerForAdmin(session.playerId);
+    } else {
+      // Captain: check if their team has a reveal token used on this player
+      const teamId = req.user.teamId || null;
+      sessionObj.playerId = sanitizePlayerForPublic(session.playerId, teamId);
+    }
+    res.json({ session: sessionObj });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -42,7 +74,10 @@ router.get('/active-public', async (_req, res) => {
   try {
     const session = await AuctionSession.findOne({ status: 'active' })
       .populate('playerId').populate('currentHighestBidder', 'name');
-    res.json({ session });
+    if (!session) return res.json({ session: null });
+    const sessionObj = session.toObject();
+    sessionObj.playerId = sanitizePlayerForPublic(session.playerId, null);
+    res.json({ session: sessionObj });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -62,7 +97,8 @@ router.post('/start', authMiddleware, adminOnly, async (req, res) => {
       timerDuration, timerRemaining: timerDuration, timerPaused: false,
     });
     const io = getIO();
-    if (io) io.emit('auction:start', { session, player });
+    // Emit full player to admin, masked to everyone else
+    if (io) io.emit('auction:start', { session, player: sanitizePlayerForPublic(player, null) });
     startTimer(session);
     res.status(201).json({ session, player });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -124,6 +160,7 @@ router.post('/sold', authMiddleware, adminOnly, async (req, res) => {
 
     await AuctionLog.create({ playerId: session.playerId, teamId: session.currentHighestBidder, action: 'sold', amount: session.currentBid });
     const io = getIO();
+    // On sold: emit full player data (reveal) — winning team sees real name/photo
     if (io) io.emit('auction:sold', { player, team, session });
     res.json({ player, team, session });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -176,27 +213,58 @@ router.post('/timer/resume', authMiddleware, adminOnly, async (req, res) => {
 // POST /api/auction/resale
 router.post('/resale', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const { teamId } = req.body;
-    const team = await Team.findById(teamId).populate('players');
-    if (!team) return res.status(404).json({ error: 'Team not found' });
+    const { playerId } = req.body;
+    if (!playerId) return res.status(400).json({ error: 'playerId required' });
 
-    const soldPlayers = await Player.find({ _id: { $in: team.players }, status: 'sold', soldTo: teamId });
-    if (!soldPlayers.length) return res.status(400).json({ error: 'No players to resell' });
+    const player = await Player.findById(playerId);
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    if (player.status !== 'sold' || !player.soldTo) return res.status(400).json({ error: 'Player is not sold' });
 
-    const highest = soldPlayers.reduce((a, b) => a.soldPrice > b.soldPrice ? a : b);
-    const refund = highest.soldPrice;
+    const teamId = player.soldTo;
+    const refund = player.soldPrice || 0;
 
-    await Player.findByIdAndUpdate(highest._id, { status: 'resold', soldTo: null, soldPrice: null });
+    await Player.findByIdAndUpdate(playerId, { status: 'resold', soldTo: null, soldPrice: null });
     await Team.findByIdAndUpdate(teamId, {
-      $pull: { players: highest._id },
+      $pull: { players: player._id },
       $inc: { budget: refund, pointsSpent: -refund, playerCount: -1 },
     });
-    await AuctionLog.create({ playerId: highest._id, teamId, action: 'resale_triggered', amount: refund });
+    await AuctionLog.create({ playerId, teamId, action: 'resale_triggered', amount: refund });
 
     const updatedTeam = await Team.findById(teamId).populate('players');
     const io = getIO();
-    if (io) io.emit('auction:resale', { player: highest, team: updatedTeam });
-    res.json({ player: highest, team: updatedTeam });
+    if (io) io.emit('auction:resale', { player, team: updatedTeam });
+    res.json({ player, team: updatedTeam });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/auction/reveal — captain uses a reveal token to see mystery player details
+router.post('/reveal', authMiddleware, captainOnly, async (req, res) => {
+  try {
+    const { playerId } = req.body;
+    if (!playerId) return res.status(400).json({ error: 'playerId required' });
+    if (!req.user.teamId) return res.status(400).json({ error: 'No team assigned' });
+
+    const player = await Player.findById(playerId);
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    if (!player.isMysteryPlayer) return res.status(400).json({ error: 'Not a mystery player' });
+
+    const team = await Team.findById(req.user.teamId);
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    // Check if already revealed to this team (no token cost)
+    const alreadyRevealed = player.revealedTo?.some(id => id.toString() === team._id.toString());
+    if (alreadyRevealed) {
+      return res.json({ player, tokensLeft: team.revealTokens });
+    }
+
+    if (team.revealTokens <= 0) return res.status(400).json({ error: 'No reveal tokens left' });
+
+    // Deduct token and mark player as revealed to this team
+    await Team.findByIdAndUpdate(team._id, { $inc: { revealTokens: -1 } });
+    await Player.findByIdAndUpdate(playerId, { $addToSet: { revealedTo: team._id } });
+
+    const updatedTeam = await Team.findById(team._id);
+    res.json({ player, tokensLeft: updatedTeam.revealTokens });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

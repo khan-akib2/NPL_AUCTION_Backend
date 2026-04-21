@@ -8,6 +8,7 @@ const TeamSchema = new mongoose.Schema({
   budget: { type: Number, default: 1000 },
   pointsSpent: { type: Number, default: 0 },
   playerCount: { type: Number, default: 0 },
+  revealTokens: { type: Number, default: 1 }, // Each team gets 1 reveal token per auction
 }, { timestamps: true });
 
 export default mongoose.models.Team || mongoose.model('Team', TeamSchema);
