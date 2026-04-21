@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const TeamSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  logo: { type: String, default: '' },
   captainId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   players: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }],
   budget: { type: Number, default: 1000 },

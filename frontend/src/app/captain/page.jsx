@@ -154,7 +154,13 @@ export default function CaptainDashboard() {
       {/* Header */}
       <header className="bg-[#0d1e3a]/95 backdrop-blur border-b border-[#c9a227]/15 px-4 lg:px-8 h-12 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-2 min-w-0">
-          <Logo size="sm" className="shrink-0 rounded-xl w-7 h-7" />
+          {team?.logo ? (
+            <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-[#c9a227]/20 bg-[#0a1628] shrink-0">
+              <Image src={team.logo} alt={team.name} fill unoptimized className="object-contain p-0.5" />
+            </div>
+          ) : (
+            <Logo size="sm" className="shrink-0 rounded-xl w-7 h-7" />
+          )}
           <span className="text-[#c9a227]/50 text-xs uppercase tracking-widest hidden sm:block">APL</span>
           <span className="text-[#c9a227]/20 hidden sm:block">·</span>
           <span className="text-white text-sm font-semibold truncate">{team?.name}</span>

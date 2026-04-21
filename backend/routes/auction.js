@@ -214,4 +214,12 @@ router.get('/log', authMiddleware, adminOnly, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// DELETE /api/auction/log — clear all logs
+router.delete('/log', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await AuctionLog.deleteMany({});
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 export default router;

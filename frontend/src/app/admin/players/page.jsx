@@ -85,6 +85,79 @@ export default function PlayersPage() {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+
+  const handleCsvUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setCsvUploading(true);
+    try {
+      const text = await file.text();
+      const lines = text.trim().split('\n').filter(l => l.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const players = lines.slice(1).map(line => {
+        // Handle quoted CSV values (e.g. "BATTING, BOWLING")
+        const vals = [];
+        let cur = '', inQuote = false;
+        for (const ch of line) {
+          if (ch === '"') { inQuote = !inQuote; }
+          else if (ch === ',' && !inQuote) { vals.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        vals.push(cur.trim());
+
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+
+        // Map Google Form column names → player fields
+        const rawName = obj['your name'] || obj['name'] || '';
+        const rawGender = obj['gender'] || 'Male';
+        const rawSkills = obj['primary skill'] || obj['primary skills'] || obj['skills'] || '';
+
+        // Normalise skills: split on comma or pipe, map to known skill names
+        const skillMap = {
+          'batting': 'Batsman', 'batsman': 'Batsman', 'batter': 'Batsman',
+          'bowling': 'Bowler', 'bowler': 'Bowler',
+          'wicket keeper': 'Wicketkeeper', 'wicketkeeper': 'Wicketkeeper', 'wicket-keeper': 'Wicketkeeper',
+          'fielding': 'Fielder', 'fielder': 'Fielder',
+        };
+        const skills = rawSkills
+          .split(/[|,]/)
+          .map(s => skillMap[s.trim().toLowerCase()] || s.trim())
+          .filter(Boolean)
+          .filter((v, i, a) => a.indexOf(v) === i); // dedupe
+
+        // Capitalise gender
+        const gender = rawGender.charAt(0).toUpperCase() + rawGender.slice(1).toLowerCase();
+
+        return {
+          name: rawName,
+          skills,
+          gender: ['Male', 'Female'].includes(gender) ? gender : 'Male',
+          basePrice: 50,
+          status: 'available',
+        };
+      }).filter(p => p.name);
+
+      let success = 0;
+      for (const p of players) {
+        const res = await fetch(`${BACKEND_URL}/api/players`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(p),
+        });
+        if (res.ok) success++;
+      }
+      toast(`${success}/${players.length} players imported`, 'success');
+      load();
+    } catch {
+      toast('CSV import failed', 'error');
+    } finally {
+      setCsvUploading(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -155,6 +228,10 @@ export default function PlayersPage() {
             className="bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">
             Delete All
           </button>
+          <label className={`relative flex items-center gap-1.5 bg-[#0d1e3a] border border-[#c9a227]/20 hover:border-[#c9a227]/40 text-white/50 hover:text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer ${csvUploading ? 'opacity-40 pointer-events-none' : ''}`}>
+            {csvUploading ? <Spinner size="sm" /> : <>📥 CSV</>}
+            <input type="file" accept=".csv" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleCsvUpload} disabled={csvUploading} />
+          </label>
           <button onClick={() => { setForm(emptyForm); setEditId(null); setShowForm(true); }}
             className="bg-[#c9a227] text-[#0a1628] text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#f0c040] transition-colors">
             + Add

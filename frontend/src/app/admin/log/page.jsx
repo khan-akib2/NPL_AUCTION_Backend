@@ -7,6 +7,7 @@ export default function AuctionLogPage() {
   const { request } = useApi();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clearConfirm, setClearConfirm] = useState(false);
 
   const load = useCallback(async () => {
     const res = await request('/api/auction/log?pageSize=500');
@@ -17,11 +18,23 @@ export default function AuctionLogPage() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
+  const clearLogs = async () => {
+    await request('/api/auction/log', { method: 'DELETE' });
+    setClearConfirm(false);
+    setLogs([]);
+  };
+
   return (
     <div className="flex flex-col min-h-screen lg:h-[calc(100vh-48px)]">
-      <div className="px-4 lg:px-6 py-4 border-b border-[#c9a227]/15 shrink-0">
-        <h1 className="text-base font-semibold text-white">Auction Log</h1>
-        <p className="text-white/40 text-xs mt-0.5">{logs.length} entries</p>
+      <div className="px-4 lg:px-6 py-4 border-b border-[#c9a227]/15 shrink-0 flex items-center justify-between">
+        <div>
+          <h1 className="text-base font-semibold text-white">Auction Log</h1>
+          <p className="text-white/40 text-xs mt-0.5">{logs.length} entries</p>
+        </div>
+        <button onClick={() => setClearConfirm(true)} disabled={logs.length === 0}
+          className="bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors disabled:opacity-30">
+          Clear All
+        </button>
       </div>
 
       <div className="flex-1 overflow-hidden p-4 lg:p-6">
@@ -92,6 +105,25 @@ export default function AuctionLogPage() {
           </div>
         </div>
       </div>
+
+      {clearConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0d1e3a] border border-red-500/30 rounded-2xl p-6 w-full max-w-sm">
+            <h2 className="text-lg font-semibold text-white mb-2">Clear All Logs?</h2>
+            <p className="text-white/50 text-sm mb-6">All auction log entries will be permanently deleted.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setClearConfirm(false)}
+                className="flex-1 bg-[#0a1628] border border-[#c9a227]/15 text-white/50 py-2.5 rounded-lg text-sm hover:text-white transition-colors">
+                Cancel
+              </button>
+              <button onClick={clearLogs}
+                className="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-lg text-sm hover:bg-red-500 transition-colors">
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

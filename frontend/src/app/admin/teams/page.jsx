@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useApi } from '@/hooks/useApi';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import Image from 'next/image';
 
-const emptyForm = { name: '', captainId: '', budget: 1000 };
+const emptyForm = { name: '', captainId: '', budget: 1000, logo: '' };
 
 function CaptainSelect({ captains, value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -51,8 +53,50 @@ function CaptainSelect({ captains, value, onChange }) {
   );
 }
 
+function LogoUpload({ value, onChange, token, toast }) {
+  const [uploading, setUploading] = useState(false);
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploading(true);
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch(`${BACKEND_URL}/api/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    const data = await res.json();
+    setUploading(false);
+    if (data.url) onChange(data.url);
+    else toast('Upload failed', 'error');
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      {value && (
+        <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#c9a227]/20 bg-[#0a1628] shrink-0">
+          <Image src={value} alt="logo" fill unoptimized className="object-contain p-1" />
+          <button type="button" onClick={() => onChange('')}
+            className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/70 rounded-full text-white/60 hover:text-white text-xs flex items-center justify-center leading-none">
+            ×
+          </button>
+        </div>
+      )}
+      <label className={`flex items-center justify-center gap-2 bg-[#c9a227]/8 border border-[#c9a227]/20 hover:bg-[#c9a227]/12 text-white/50 hover:text-white text-sm px-4 py-2.5 rounded-lg transition-colors cursor-pointer flex-1 ${uploading ? 'opacity-40 pointer-events-none' : ''}`}>
+        {uploading ? <Spinner size="sm" /> : <>{value ? 'Change Logo' : 'Upload Logo'}</>}
+        <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
+      </label>
+    </div>
+  );
+}
+
 export default function TeamsPage() {
   const { request } = useApi();
+  const { token } = useAuth();
   const toast = useToast();
   const [teams, setTeams] = useState([]);
   const [captains, setCaptains] = useState([]);
@@ -81,7 +125,7 @@ export default function TeamsPage() {
 
   const openAdd = () => { setForm(emptyForm); setEditId(null); setShowForm(true); };
   const openEdit = (team) => {
-    setForm({ name: team.name, captainId: team.captainId?._id || '', budget: team.budget ?? 1000 });
+    setForm({ name: team.name, captainId: team.captainId?._id || '', budget: team.budget ?? 1000, logo: team.logo || '' });
     setEditId(team._id);
     setShowForm(true);
   };
@@ -163,9 +207,20 @@ export default function TeamsPage() {
                   <div key={team._id} className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-xl overflow-hidden">
                     <div className="p-5">
                       <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h2 className="text-base font-semibold text-white">{team.name}</h2>
-                          <p className="text-white/40 text-xs mt-0.5">{team.captainId?.name || 'No captain'}</p>
+                        <div className="flex items-center gap-3">
+                          {team.logo ? (
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-[#c9a227]/20 bg-[#0a1628] shrink-0">
+                              <Image src={team.logo} alt={team.name} fill unoptimized className="object-contain p-1" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg border border-[#c9a227]/10 bg-[#0a1628] flex items-center justify-center shrink-0">
+                              <span className="text-[#c9a227]/20 text-lg font-black">{team.name[0]}</span>
+                            </div>
+                          )}
+                          <div>
+                            <h2 className="text-base font-semibold text-white">{team.name}</h2>
+                            <p className="text-white/40 text-xs mt-0.5">{team.captainId?.name || 'No captain'}</p>
+                          </div>
                         </div>
                         <div className="text-right">
                           <div className="text-white font-semibold">{team.budget}</div>
@@ -241,6 +296,10 @@ export default function TeamsPage() {
                   placeholder="e.g. Thunder Hawks"
                   className="w-full bg-[#c9a227]/8 border border-[#c9a227]/20 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-white/30 transition-colors"
                 />
+              </div>
+              <div>
+                <label className="text-xs text-white/30 uppercase tracking-wider mb-1.5 block">Team Logo</label>
+                <LogoUpload value={form.logo} onChange={url => setForm(f => ({ ...f, logo: url }))} token={token} toast={toast} />
               </div>
               <div>
                 <label className="text-xs text-white/30 uppercase tracking-wider mb-1.5 block">Assign Captain</label>

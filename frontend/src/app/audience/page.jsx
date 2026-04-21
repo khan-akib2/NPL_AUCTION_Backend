@@ -255,6 +255,15 @@ export default function AudiencePage() {
                   <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
                     <div className="flex items-start gap-1.5 sm:gap-2 flex-1 min-w-0">
                       <span className="text-[#c9a227]/30 text-[10px] sm:text-xs w-4 shrink-0 text-center">{idx + 1}</span>
+                      {team.logo ? (
+                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-[#c9a227]/20 bg-[#0a1628] shrink-0">
+                          <Image src={team.logo} alt={team.name} fill unoptimized className="object-contain p-1" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-[#c9a227]/10 bg-[#0a1628] flex items-center justify-center shrink-0">
+                          <span className="text-[#c9a227]/30 text-sm font-black">{team.name[0]}</span>
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <p className="text-white font-semibold text-xs sm:text-sm truncate">{team.name}</p>
                         <p className="text-white/30 text-[10px] sm:text-xs">{team.playerCount}/7 players</p>

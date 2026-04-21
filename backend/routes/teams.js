@@ -65,6 +65,15 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
 // DELETE /api/teams/:id
 router.delete('/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
+    const team = await Team.findById(req.params.id);
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    // Reset all players sold to this team back to available
+    await Player.updateMany(
+      { soldTo: req.params.id },
+      { status: 'available', soldTo: null, soldPrice: null }
+    );
+
     await Team.findByIdAndDelete(req.params.id);
     await User.updateMany({ teamId: req.params.id }, { teamId: null });
     res.json({ success: true });
