@@ -262,18 +262,7 @@ export default function CaptainDashboard() {
       )}
 
       {/* Mobile tabs */}
-      <div className="flex border-b border-[#c9a227]/15 lg:hidden">
-        <button onClick={() => setTab('auction')}
-          className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${tab === 'auction' ? 'text-[#c9a227] border-b-2 border-[#c9a227]' : 'text-white/30'}`}>
-          Live Auction
-        </button>
-        <button onClick={() => setTab('squad')}
-          className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${tab === 'squad' ? 'text-[#c9a227] border-b-2 border-[#c9a227]' : 'text-white/30'}`}>
-          Squad ({team?.playerCount || 0}/6)
-        </button>
-      </div>
-
-      <div className="flex-1 p-3 lg:p-4 overflow-hidden">
+      <div className="flex-1 p-3 lg:p-4 overflow-hidden" style={{ height: 'calc(100vh - 100px)' }}>
         {activeSession && activePlayer ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 h-full">
 
@@ -466,58 +455,6 @@ export default function CaptainDashboard() {
             <p className="text-white/25 text-sm">The next player will appear here</p>
           </div>
         )}
-      </div>
-              </div>
-              <p className="text-white/60 text-xl font-bold mb-2">Waiting for Auction</p>
-              <p className="text-white/25 text-sm">The next player will appear here</p>
-            </div>
-          )}
-        </div>
-
-        {/* ── Squad panel ── */}
-        <div className={`lg:w-72 flex flex-col gap-4 ${tab !== 'squad' ? 'hidden lg:flex' : 'flex'}`}>
-
-          {/* Budget card */}
-          <div className={`rounded-2xl p-4 shadow-xl border ${budgetCritical ? 'bg-red-500/10 border-red-500/30' : budgetLow ? 'bg-orange-500/8 border-orange-400/25' : 'bg-[#0d1e3a] border-[#c9a227]/20'}`}>
-            <div className="flex items-center justify-between mb-2">
-              <p className={`text-xs uppercase tracking-wider font-bold ${budgetCritical ? 'text-red-400/70' : budgetLow ? 'text-orange-400/70' : 'text-white/40'}`}>Budget</p>
-              <p className={`font-black text-base tabular-nums ${budgetCritical ? 'text-red-400' : budgetLow ? 'text-orange-400' : 'text-[#c9a227]'}`}>
-                {team?.budget} <span className="text-white/30 text-xs font-normal">pts</span>
-              </p>
-            </div>
-            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-700 ${budgetCritical ? 'bg-red-500' : budgetLow ? 'bg-orange-400' : 'bg-[#c9a227]/70'}`}
-                style={{ width: `${budgetPct}%` }} />
-            </div>
-            <div className="flex justify-between text-xs text-white/30 mt-1.5">
-              <span>Spent: {team?.pointsSpent || 0} pts</span>
-              <span>{budgetPct}%</span>
-            </div>
-          </div>
-
-          {/* Squad list */}
-          <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-4 flex-1 flex flex-col shadow-xl">
-            <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-3">
-              My Squad · {team?.playerCount || 0}/6
-            </p>
-            <div className="space-y-2 overflow-y-auto">
-              {team?.players?.map(p => (
-                <div key={p._id} className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a1628]/50 border border-[#c9a227]/8">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/80 text-sm font-semibold truncate">{p.name}</p>
-                    <div className="flex gap-1 mt-0.5">{p.skills?.slice(0,1).map(s => <SkillBadge key={s} skill={s} />)}</div>
-                  </div>
-                  <span className="text-[#c9a227] text-xs font-bold ml-2 shrink-0">{p.soldPrice} pts</span>
-                </div>
-              ))}
-              {Array.from({ length: Math.max(0, 6 - (team?.players?.length || 0)) }).map((_, i) => (
-                <div key={i} className="py-2.5 px-3 rounded-xl border border-dashed border-white/8">
-                  <p className="text-white/15 text-xs">Slot {(team?.players?.length || 0) + i + 1}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Mystery reveal overlay — shown to winning captain */}
