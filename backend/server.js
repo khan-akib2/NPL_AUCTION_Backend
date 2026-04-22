@@ -34,6 +34,7 @@ const httpServer = http.createServer(app);
 // CORS — allow frontend origin
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3000',
   'https://apl-auction-psi.vercel.app',
   /\.vercel\.app$/,
 ];

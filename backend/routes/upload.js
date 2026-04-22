@@ -28,7 +28,7 @@ if (useCloudinary) {
     params: {
       folder: 'npl-auction',
       allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-      transformation: [{ width: 800, height: 1000, crop: 'limit', quality: 'auto' }],
+      transformation: [{ width: 600, height: 800, crop: 'limit', quality: 'auto:low' }],
     },
   });
 

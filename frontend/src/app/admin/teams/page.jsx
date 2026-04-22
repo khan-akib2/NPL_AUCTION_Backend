@@ -62,8 +62,30 @@ function LogoUpload({ value, onChange, token, toast }) {
     if (!file) return;
     e.target.value = '';
     setUploading(true);
+
+    // Client-side compression
+    const compressed = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 600;
+          let w = img.width, h = img.height;
+          if (w > h && w > MAX) { h = (h * MAX) / w; w = MAX; }
+          else if (h > MAX) { w = (w * MAX) / h; h = MAX; }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(resolve, 'image/jpeg', 0.85);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
     const fd = new FormData();
-    fd.append('file', file);
+    fd.append('file', compressed, 'logo.jpg');
     const res = await fetch(`${BACKEND_URL}/api/upload`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
