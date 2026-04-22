@@ -155,18 +155,18 @@ export default function CaptainDashboard() {
   };
 
   const isLeading = activeSession?.currentHighestBidder?.toString() === team?._id?.toString();
-  const canBid = activeSession && team && team.playerCount < 7 && !isLeading;
-  const budgetPct = team ? Math.round((team.pointsSpent / 1000) * 100) : 0;
+  const canBid = activeSession && team && team.playerCount < 6 && !isLeading;
+  const budgetPct = team ? Math.round((team.pointsSpent / 500) * 100) : 0;
 
   // Budget alert thresholds
-  const budgetCritical = team && team.budget <= 50;
-  const budgetLow = team && team.budget <= 100 && team.budget > 50;
+  const budgetCritical = team && team.budget <= 25;
+  const budgetLow = team && team.budget <= 50 && team.budget > 25;
 
   // Toast once when budget drops low
   useEffect(() => {
     if (!team) return;
-    if (team.budget <= 50) toast(`⚠️ Critical! Only ${team.budget} pts left`, 'error');
-    else if (team.budget <= 100) toast(`Budget low — ${team.budget} pts remaining`, 'warning');
+    if (team.budget <= 25) toast(`Critical! Only ${team.budget} pts left`, 'error');
+    else if (team.budget <= 50) toast(`Budget low — ${team.budget} pts remaining`, 'warning');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [team?.budget]);
 
@@ -255,7 +255,7 @@ export default function CaptainDashboard() {
         </button>
         <button onClick={() => setTab('squad')}
           className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${tab === 'squad' ? 'text-[#c9a227] border-b-2 border-[#c9a227]' : 'text-white/30'}`}>
-          Squad ({team?.playerCount || 0}/7)
+          Squad ({team?.playerCount || 0}/6)
         </button>
       </div>
 
@@ -392,8 +392,8 @@ export default function CaptainDashboard() {
                   {bidding && <div className="flex justify-center pt-1"><Spinner size="sm" /></div>}
                   {!canBid && activeSession && (
                     <p className="text-center text-white/40 text-xs">
-                      {team?.playerCount >= 7
-                        ? 'Squad full (7/7 players)'
+                      {team?.playerCount >= 6
+                        ? 'Squad full (6/6 players)'
                         : isLeading
                           ? 'You are leading — wait for another bid'
                           : `Insufficient budget`}
@@ -458,7 +458,7 @@ export default function CaptainDashboard() {
           {/* Squad list */}
           <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-4 flex-1 flex flex-col shadow-xl">
             <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-3">
-              My Squad · {team?.playerCount || 0}/7
+              My Squad · {team?.playerCount || 0}/6
             </p>
             <div className="space-y-2 overflow-y-auto">
               {team?.players?.map(p => (
@@ -470,7 +470,7 @@ export default function CaptainDashboard() {
                   <span className="text-[#c9a227] text-xs font-bold ml-2 shrink-0">{p.soldPrice} pts</span>
                 </div>
               ))}
-              {Array.from({ length: Math.max(0, 7 - (team?.players?.length || 0)) }).map((_, i) => (
+              {Array.from({ length: Math.max(0, 6 - (team?.players?.length || 0)) }).map((_, i) => (
                 <div key={i} className="py-2.5 px-3 rounded-xl border border-dashed border-white/8">
                   <p className="text-white/15 text-xs">Slot {(team?.players?.length || 0) + i + 1}</p>
                 </div>

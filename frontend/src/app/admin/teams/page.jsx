@@ -6,7 +6,7 @@ import { useToast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import Image from 'next/image';
 
-const emptyForm = { name: '', captainId: '', budget: 1000, logo: '' };
+const emptyForm = { name: '', captainId: '', budget: 500, logo: '' };
 
 function CaptainSelect({ captains, value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -125,7 +125,7 @@ export default function TeamsPage() {
 
   const openAdd = () => { setForm(emptyForm); setEditId(null); setShowForm(true); };
   const openEdit = (team) => {
-    setForm({ name: team.name, captainId: team.captainId?._id || '', budget: team.budget ?? 1000, logo: team.logo || '' });
+    setForm({ name: team.name, captainId: team.captainId?._id || '', budget: team.budget ?? 500, logo: team.logo || '' });
     setEditId(team._id);
     setShowForm(true);
   };
@@ -209,7 +209,7 @@ export default function TeamsPage() {
           <div className="flex-1 overflow-y-auto p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
               {teams.map(team => {
-                const pct = Math.round((team.pointsSpent / 1000) * 100);
+                const pct = Math.round((team.pointsSpent / 500) * 100);
                 const id = team._id?.toString?.() ?? String(team._id);
                 const isExpanded = expanded !== null && expanded === id;
                 return (
@@ -242,7 +242,7 @@ export default function TeamsPage() {
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-white/40 mb-4">
-                        <span>{team.playerCount}/7 players</span>
+                        <span>{team.playerCount}/6 players</span>
                         <span>{pct}% spent</span>
                       </div>
 

@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
     const playerDocs = PLAYER_NAMES.slice(0, 56).map((name, i) => ({
       name,
       skills: [SKILLS[i % SKILLS.length], SKILLS[(i + 1) % SKILLS.length]],
-      basePrice: 50,
+      basePrice: 20,
       status: 'available',
     }));
     await Player.insertMany(playerDocs);
@@ -56,6 +56,72 @@ router.get('/', async (req, res) => {
     res.json({ message: 'Seeded successfully', teams: 8, players: 56 });
   } catch (e) {
     console.error('SEED ERROR:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/seed/fix-shams?secret=<SEED_SECRET> — one-click update Shams credentials
+router.get('/fix-shams', async (req, res) => {
+  const secret = req.query.secret;
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const result = await User.findOneAndUpdate(
+      { $or: [{ name: /shams/i }, { email: /shams/i }, { email: 'zaidacchwa@gmail.com' }] },
+      { $set: { name: 'Zaid', email: 'zaidacchwa@gmail.com', passwordHash: await bcrypt.hash('zaidacchwa@123!', 10) } },
+      { returnDocument: 'after' }
+    );
+    if (!result) return res.status(404).json({ error: 'User not found' });
+    res.json({ success: true, name: result.name, email: result.email });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/seed/fix-budgets?secret=<SEED_SECRET> — set all team budgets to 500
+router.get('/fix-budgets', async (req, res) => {
+  const secret = req.query.secret;
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const result = await Team.updateMany({}, { $set: { budget: 500 } });
+    res.json({ success: true, updated: result.modifiedCount });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/seed/fix-players?secret=<SEED_SECRET> — bulk update all existing players base price
+router.get('/fix-players', async (req, res) => {
+  const secret = req.query.secret;
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const result = await Player.updateMany({}, { $set: { basePrice: 20 } });
+    res.json({ success: true, updated: result.modifiedCount });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/seed/update-user?secret=<SEED_SECRET> — update a user's email/password by current email
+router.post('/update-user', async (req, res) => {
+  const secret = req.query.secret;
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { currentEmail, newEmail, newPassword } = req.body;
+    const user = await User.findOne({ email: currentEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (newEmail) user.email = newEmail;
+    if (newPassword) user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.json({ success: true, email: user.email });
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });

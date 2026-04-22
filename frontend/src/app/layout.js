@@ -6,6 +6,11 @@ export const metadata = {
   title: "APL Sports Auction",
   description: "Alliance Premiere League Sports Auction Platform",
   robots: { index: true, follow: true },
+  icons: {
+    icon: '/APL.png',
+    shortcut: '/APL.png',
+    apple: '/APL.png',
+  },
 };
 
 export const viewport = {

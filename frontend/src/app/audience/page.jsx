@@ -264,7 +264,7 @@ export default function AudiencePage() {
         {tab === 'teams' && (
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 content-start">
             {teams.map((team, idx) => {
-              const pct = Math.round((team.pointsSpent / 1000) * 100);
+              const pct = Math.round((team.pointsSpent / 500) * 100);
               return (
                 <div key={team._id} className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-lg lg:rounded-xl p-3 sm:p-4 lg:p-5">
                   <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
@@ -281,7 +281,7 @@ export default function AudiencePage() {
                       )}
                       <div className="min-w-0">
                         <p className="text-white font-semibold text-xs sm:text-sm truncate">{team.name}</p>
-                        <p className="text-white/30 text-[10px] sm:text-xs">{team.playerCount}/7 players</p>
+                        <p className="text-white/30 text-[10px] sm:text-xs">{team.playerCount}/6 players</p>
                       </div>
                     </div>
                     <div className="text-right shrink-0">

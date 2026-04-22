@@ -42,7 +42,7 @@ export default function LoginPage() {
 
       {/* Left branding panel — desktop only */}
       <div className="hidden lg:flex flex-col w-[45%] bg-[#0d1e3a] border-r border-[#c9a227]/20 p-10 relative overflow-hidden">
-        <Image src="/NPL.png" alt="" fill priority loading="eager" sizes="45vw"
+        <Image src="/APL.png" alt="" fill priority loading="eager" sizes="45vw"
           className="object-cover opacity-15 pointer-events-none" />
         <div className="absolute inset-0 bg-[#0d1e3a]/50 pointer-events-none" />
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
             Real-time player bidding for APL&apos;s Alliance Premiere League championship.
           </p>
           <div className="flex gap-6">
-            {[['8','Teams'],['56','Players'],['1000','Points']].map(([val, label]) => (
+            {[['8','Teams'],['48','Players'],['500','Points']].map(([val, label]) => (
               <div key={label}>
                 <div className="text-[#c9a227] text-2xl font-bold">{val}</div>
                 <div className="text-white/30 text-xs uppercase tracking-wider mt-0.5">{label}</div>
@@ -85,7 +85,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
         {/* Background image — mobile only */}
         <div className="lg:hidden absolute inset-0 pointer-events-none">
-          <Image src="/NPL.png" alt="" fill sizes="100vw"
+          <Image src="/APL.png" alt="" fill sizes="100vw"
             className="w-full h-full object-cover opacity-[0.07]" />
           <div className="absolute inset-0 bg-[#0a1628]/75" />
         </div>

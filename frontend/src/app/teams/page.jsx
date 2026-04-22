@@ -54,7 +54,7 @@ export default function TeamsPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {sorted.map((team, idx) => {
-              const pct = Math.round((team.pointsSpent / 1000) * 100);
+              const pct = Math.round((team.pointsSpent / 500) * 100);
               return (
                 <div key={team._id} className="bg-[#0a1628] border border-white/5 hover:border-[#c9a227]/20 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#c9a227]/5">
                   <div className="flex items-start justify-between mb-4">

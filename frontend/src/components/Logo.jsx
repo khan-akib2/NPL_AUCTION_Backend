@@ -10,8 +10,8 @@ export default function Logo({ size = 'md', className = '' }) {
   };
   return (
     <Image
-      src="/NPL.png"
-      alt="NPL Logo"
+      src="/APL.png"
+      alt="APL Season 8"
       width={96}
       height={96}
       priority

@@ -73,7 +73,7 @@ export default function ResultsPage() {
         ) : (
           <div className="space-y-3">
             {teams.map((team, idx) => {
-              const pct = Math.round((team.pointsSpent / 1000) * 100);
+              const pct = Math.round((team.pointsSpent / 500) * 100);
               const isOpen = expanded === team._id;
               const emptySlots = Math.max(0, 7 - (team.players?.length || 0));
 

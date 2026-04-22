@@ -17,7 +17,7 @@ const STATUS_COLORS = {
   resold: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
 };
 const emptyForm = {
-  name: '', photo: '', skills: [], gender: 'Male', basePrice: 50, status: 'available',
+  name: '', photo: '', skills: [], gender: 'Male', basePrice: 20, status: 'available',
   isMysteryPlayer: false,
   mysteryConfig: { roleHint: '', ratingRange: '', formStatus: '', region: '', isStar: false, isBust: false, deceptionLevel: 'low', blurredPhoto: '' },
 };
@@ -171,7 +171,7 @@ export default function PlayersPage() {
           name: rawName,
           skills,
           gender: ['Male', 'Female'].includes(gender) ? gender : 'Male',
-          basePrice: 50,
+          basePrice: 20,
           status: 'available',
         };
       }).filter(p => p.name);
@@ -232,6 +232,7 @@ export default function PlayersPage() {
   const handleEdit = p => {
     setForm({
       name: p.name, photo: p.photo || '', skills: p.skills || [], gender: p.gender || 'Male', basePrice: p.basePrice,
+      status: p.status || 'available',
       isMysteryPlayer: p.isMysteryPlayer || false,
       mysteryConfig: {
         roleHint: p.mysteryConfig?.roleHint || '',
@@ -440,6 +441,21 @@ export default function PlayersPage() {
                 <input type="number" value={form.basePrice} onChange={e => setForm(f => ({ ...f, basePrice: Number(e.target.value) }))}
                   className="w-full bg-[#0a1628] border border-[#c9a227]/20 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#c9a227]/50" />
               </div>
+
+              {/* Status — only shown when editing */}
+              {editId && (
+                <div>
+                  <label className="text-xs text-[#c9a227]/50 uppercase tracking-wider mb-2 block">Status</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STATUSES.map(s => (
+                      <button key={s} type="button" onClick={() => setForm(f => ({ ...f, status: s }))}
+                        className={`py-2 rounded-lg text-xs font-semibold capitalize border transition-colors ${form.status === s ? STATUS_COLORS[s] : 'bg-[#0a1628] text-white/30 border-white/10 hover:text-white/50'}`}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Mystery Player Toggle */}
               <div className="border-t border-[#c9a227]/10 pt-4">

@@ -215,7 +215,7 @@ export default function AuctionControl() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 px-4 lg:px-6 pb-4 lg:pb-6 overflow-y-auto" style={{ overflowX: 'visible' }}>
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 px-4 lg:px-6 pb-4 lg:pb-6 overflow-y-auto overflow-x-hidden">
 
         {/* Queue */}
         <div className={`lg:col-span-3 flex flex-col min-h-0 overflow-visible ${mobileTab !== 'queue' ? 'hidden lg:flex' : 'flex'}`}>
@@ -265,7 +265,7 @@ export default function AuctionControl() {
         </div>
 
         {/* Active Auction */}
-        <div className={`lg:col-span-6 flex flex-col min-h-0 ${mobileTab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
+        <div className={`lg:col-span-5 flex flex-col min-h-0 ${mobileTab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl flex flex-col h-full overflow-hidden shadow-2xl">
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />
@@ -360,7 +360,7 @@ export default function AuctionControl() {
         </div>
 
         {/* Bids + Resale */}
-        <div className={`lg:col-span-3 flex flex-col gap-3 min-h-0 ${mobileTab !== 'bids' ? 'hidden lg:flex' : 'flex'}`}>
+        <div className={`lg:col-span-4 flex flex-col gap-3 min-h-0 ${mobileTab !== 'bids' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-xl flex flex-col flex-1 overflow-hidden shadow-2xl">
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[#0a1628] border-b border-[#c9a227]/15 shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-[#c9a227]/20" />

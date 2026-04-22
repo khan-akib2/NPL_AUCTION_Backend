@@ -37,7 +37,7 @@ function downloadPDF(teams) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text(
-        `Captain: ${team.captainId?.name || 'N/A'}   |   Budget left: ${team.budget} pts   |   Spent: ${team.pointsSpent} pts   |   Players: ${team.playerCount}/7`,
+        `Captain: ${team.captainId?.name || 'N/A'}   |   Budget left: ${team.budget} pts   |   Spent: ${team.pointsSpent} pts   |   Players: ${team.playerCount}/6`,
         W - 14, y + 6.5, { align: 'right' }
       );
       y += 13;
@@ -45,7 +45,7 @@ function downloadPDF(teams) {
       const rows = (team.players || []).map((p, i) => [
         i + 1, p.name, p.skills?.join(', ') || '—', `${p.soldPrice} pts`,
       ]);
-      for (let i = rows.length; i < 7; i++) rows.push([i + 1, '— Empty slot —', '', '']);
+      for (let i = rows.length; i < 6; i++) rows.push([i + 1, '— Empty slot —', '', '']);
 
       autoTable(doc, {
         startY: y,
@@ -119,7 +119,7 @@ export default function SummaryPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-[#c9a227] text-sm font-medium">{team.budget} pts left</div>
-                    <div className="text-white/40 text-xs">{team.playerCount}/7 · {team.pointsSpent} spent</div>
+                    <div className="text-white/40 text-xs">{team.playerCount}/6 · {team.pointsSpent} spent</div>
                   </div>
                 </div>
                 <div className="p-3 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
