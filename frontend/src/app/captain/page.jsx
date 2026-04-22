@@ -42,7 +42,6 @@ export default function CaptainDashboard() {
       request('/api/teams'),
       request('/api/auction/active'),
     ]);
-    // Try by teamId first, fallback to first team in list
     const myTeam = teamRes?.teams?.[0] || null;
     if (myTeam) setTeam(myTeam);
     if (sessionRes?.session) {
@@ -55,6 +54,7 @@ export default function CaptainDashboard() {
       setTimer({ remaining: null, paused: false });
     }
     setLoading(false);
+    return !!myTeam;
   }, [request]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -62,10 +62,18 @@ export default function CaptainDashboard() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (socket && !socket.connected) loadData();
+      // Poll if socket disconnected OR if no team assigned yet
+      if (!socket?.connected || !team) loadData();
     }, 3000);
     return () => clearInterval(interval);
-  }, [socket, loadData]);
+  }, [socket, loadData, team]);
+
+  // Reload when tab becomes visible
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') loadData(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loadData]);
 
   useEffect(() => {
     if (!socket) return;
@@ -115,6 +123,10 @@ export default function CaptainDashboard() {
         return { ...prev, revealTokens };
       });
     });
+    socket.on('team:assigned', ({ captainId }) => {
+      // If this socket belongs to the assigned captain, reload immediately
+      if (user?.id === captainId || user?._id === captainId) loadData();
+    });
     socket.on('auction:timer', (data) => {
       setTimer(data);
       // Timer sounds disabled
@@ -129,6 +141,7 @@ export default function CaptainDashboard() {
       socket.off('auction:unsold');
       socket.off('auction:resale');
       socket.off('team:token_added');
+      socket.off('team:assigned');
       socket.off('auction:timer');
     };
   }, [socket, toast, team, loadData]);
@@ -174,8 +187,9 @@ export default function CaptainDashboard() {
   if (!team) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a1628]">
       <div className="text-center">
-        <p className="text-white/50 text-sm mb-2">No team assigned</p>
-        <p className="text-white/25 text-xs">Contact admin to assign your team</p>
+        <Spinner size="lg" />
+        <p className="text-white/50 text-sm mt-4 mb-1">Waiting for team assignment...</p>
+        <p className="text-white/25 text-xs">This page will update automatically</p>
       </div>
     </div>
   );
@@ -259,23 +273,90 @@ export default function CaptainDashboard() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-3 lg:p-6">
+      <div className="flex-1 p-3 lg:p-4 overflow-hidden">
+        {activeSession && activePlayer ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 h-full">
 
-        {/* ── Auction panel ── */}
-        <div className={`flex-1 min-w-0 flex flex-col gap-4 ${tab !== 'auction' ? 'hidden lg:flex' : 'flex'}`}>
-          {activeSession && activePlayer ? (
-            <>
-              {/* HERO PLAYER CARD — mystery or normal */}
+            {/* LEFT: Bid Controls + History */}
+            <div className="lg:col-span-3 flex flex-col gap-3 h-full overflow-hidden">
+              {/* Bid control */}
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
+                <div className="px-4 py-3 border-b border-[#c9a227]/10">
+                  <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-1">Current Bid</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
+                    <span className="text-white/40 text-sm">pts</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 divide-x divide-[#c9a227]/10 border-b border-[#c9a227]/10">
+                  <div className="px-3 py-2 text-center">
+                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Your Budget</p>
+                    <p className="text-white/80 text-sm font-bold tabular-nums">{team?.budget ?? '—'}</p>
+                  </div>
+                  <div className="px-3 py-2 text-center">
+                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Leading</p>
+                    <p className={`text-sm font-bold ${isLeading ? 'text-[#c9a227]' : 'text-white/60'}`}>
+                      {activeSession.currentHighestBidderName ? (isLeading ? 'You' : activeSession.currentHighestBidderName.split(' ')[0]) : '—'}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-3 space-y-2">
+                  <div className="grid grid-cols-4 gap-2">
+                    {[1, 3, 5, 10].map(amt => {
+                      const nextBid = activeSession.currentBid + amt;
+                      const canBidAmt = canBid && team.budget >= nextBid;
+                      return (
+                        <button key={amt}
+                          onClick={() => placeBid(amt)}
+                          disabled={!canBidAmt || bidding}
+                          className="bg-[#c9a227] text-[#0a1628] font-black py-2.5 rounded-xl text-xs hover:bg-[#f0c040] disabled:opacity-25 disabled:cursor-not-allowed flex flex-col items-center justify-center transition-all active:scale-[0.97]">
+                          <span className="text-xs font-black">+{amt}</span>
+                          <span className="text-[9px] opacity-70">{nextBid}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {bidding && <div className="flex justify-center"><Spinner size="sm" /></div>}
+                  {!canBid && activeSession && (
+                    <p className="text-center text-white/40 text-[10px]">
+                      {team?.playerCount >= 6 ? 'Squad full' : isLeading ? 'You are leading' : 'Low budget'}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Bid history */}
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl overflow-hidden shadow-xl flex-1 flex flex-col min-h-0">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-[#c9a227]/10 shrink-0">
+                  <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
+                  <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>
+                </div>
+                <div className="flex-1 overflow-y-auto divide-y divide-[#c9a227]/5 min-h-0">
+                  {bidHistory.length === 0 && <p className="text-white/30 text-xs text-center py-6">No bids yet</p>}
+                  {bidHistory.map((b, i) => (
+                    <div key={i} className={`flex items-center justify-between px-3 py-2 ${i === 0 ? 'bg-[#c9a227]/8' : ''}`}>
+                      <span className={`text-xs font-semibold truncate ${i === 0 ? 'text-white' : 'text-white/60'}`}>{b.teamName}</span>
+                      <span className={`text-xs font-black tabular-nums ml-2 ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>{b.amount}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* CENTER: Player Card */}
+            <div className="lg:col-span-6 flex flex-col h-full">
               {activePlayer.isMysteryPlayer && activePlayer._isMasked ? (
-                <MysteryPlayerCard
-                  player={activePlayer}
-                  revealTokens={team?.revealTokens ?? 0}
-                  onReveal={handleReveal}
-                  revealing={revealing}
-                  revealed={revealedPlayerIds.has(activePlayer._id)}
-                />
+                <div className="h-full">
+                  <MysteryPlayerCard
+                    player={activePlayer}
+                    revealTokens={team?.revealTokens ?? 0}
+                    onReveal={handleReveal}
+                    revealing={revealing}
+                    revealed={revealedPlayerIds.has(activePlayer._id)}
+                  />
+                </div>
               ) : (
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl" style={{ minHeight: '420px', height: '55vh', maxHeight: '600px' }}>
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl h-full" style={{ minHeight: '400px' }}>
 
                 {/* Full-bleed background photo */}
                 {activePlayer.photo ? (
@@ -330,103 +411,62 @@ export default function CaptainDashboard() {
                 </div>
               </div>
               )} {/* end mystery/normal conditional */}
+            </div>
 
-              {/* BID CONTROL STRIP */}
-              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
-
-                {/* Timer bar — removed */}
-
-                {/* Current bid + leading */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-[#c9a227]/10">
-                  <div>
-                    <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-0.5">Current Bid</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl lg:text-4xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
-                      <span className="text-white/40 text-sm font-semibold">pts</span>
-                    </div>
-                  </div>
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${
-                    isLeading ? 'bg-[#c9a227]/15 border-[#c9a227]/40' : 'bg-white/5 border-white/10'
-                  }`}>
-                    {isLeading && <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />}
-                    <div>
-                      <p className="text-white/30 text-[9px] uppercase tracking-wider">Leading</p>
-                      <p className={`text-sm font-bold ${isLeading ? 'text-[#c9a227]' : 'text-white/60'}`}>
-                        {activeSession.currentHighestBidderName
-                          ? isLeading ? 'You' : activeSession.currentHighestBidderName
-                          : 'No bids yet'}
-                      </p>
-                    </div>
-                  </div>
+            {/* RIGHT: Budget + Squad */}
+            <div className="lg:col-span-3 flex flex-col gap-3 h-full overflow-hidden">
+              {/* Budget */}
+              <div className={`rounded-2xl p-4 shadow-xl border shrink-0 ${budgetCritical ? 'bg-red-500/10 border-red-500/30' : budgetLow ? 'bg-orange-500/8 border-orange-400/25' : 'bg-[#0d1e3a] border-[#c9a227]/20'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className={`text-xs uppercase tracking-wider font-bold ${budgetCritical ? 'text-red-400/70' : budgetLow ? 'text-orange-400/70' : 'text-white/40'}`}>Budget</p>
+                  <p className={`font-black text-base tabular-nums ${budgetCritical ? 'text-red-400' : budgetLow ? 'text-orange-400' : 'text-[#c9a227]'}`}>
+                    {team?.budget} <span className="text-white/30 text-xs font-normal">pts</span>
+                  </p>
                 </div>
-
-                {/* Budget row */}
-                <div className="grid grid-cols-2 divide-x divide-[#c9a227]/10 border-b border-[#c9a227]/10">
-                  <div className="px-3 py-2 text-center">
-                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Your Budget</p>
-                    <p className="text-white/80 text-sm font-bold tabular-nums">{team?.budget ?? '—'} pts</p>
-                  </div>
-                  <div className="px-3 py-2 text-center">
-                    <p className="text-white/30 text-[9px] uppercase tracking-wider mb-0.5">Current Bid</p>
-                    <p className="text-[#c9a227] text-sm font-bold tabular-nums">{activeSession.currentBid} pts</p>
-                  </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-700 ${budgetCritical ? 'bg-red-500' : budgetLow ? 'bg-orange-400' : 'bg-[#c9a227]/70'}`}
+                    style={{ width: `${budgetPct}%` }} />
                 </div>
-
-                {/* Bid buttons — 1, 3, 5, 10 pts */}
-                <div className="p-3 space-y-2">
-                  <div className="grid grid-cols-4 gap-2">
-                    {[1, 3, 5, 10].map(amt => {
-                      const nextBid = activeSession.currentBid + amt;
-                      const canBidAmt = canBid && team.budget >= nextBid;
-                      return (
-                        <button key={amt}
-                          onClick={() => placeBid(amt)}
-                          disabled={!canBidAmt || bidding}
-                          className="bg-[#c9a227] text-[#0a1628] font-black py-3 rounded-xl text-sm hover:bg-[#f0c040] disabled:opacity-25 disabled:cursor-not-allowed flex flex-col items-center justify-center transition-all active:scale-[0.97] shadow-lg shadow-[#c9a227]/10">
-                          <span className="text-xs font-black leading-none">+{amt}</span>
-                          <span className="text-[10px] font-semibold opacity-70 mt-0.5">{nextBid}pts</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {bidding && <div className="flex justify-center pt-1"><Spinner size="sm" /></div>}
-                  {!canBid && activeSession && (
-                    <p className="text-center text-white/40 text-xs">
-                      {team?.playerCount >= 6
-                        ? 'Squad full (6/6 players)'
-                        : isLeading
-                          ? 'You are leading — wait for another bid'
-                          : `Insufficient budget`}
-                    </p>
-                  )}
+                <div className="flex justify-between text-xs text-white/30 mt-1.5">
+                  <span>Spent: {team?.pointsSpent || 0} pts</span>
+                  <span>{budgetPct}%</span>
                 </div>
               </div>
 
-              {/* Bid history */}
-              {bidHistory.length > 0 && (
-                <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl overflow-hidden shadow-xl">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10">
-                    <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
-                    <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>
-                  </div>
-                  <div className="max-h-48 overflow-y-auto divide-y divide-[#c9a227]/5">
-                    {bidHistory.map((b, i) => (
-                      <div key={i} className={`flex items-center justify-between px-4 py-2.5 ${i === 0 ? 'bg-[#c9a227]/8' : ''}`}>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white/25 text-xs font-mono w-6 text-right">#{bidHistory.length - i}</span>
-                          <span className={`text-sm font-semibold ${i === 0 ? 'text-white' : 'text-white/60'}`}>{b.teamName}</span>
-                        </div>
-                        <span className={`text-sm font-black tabular-nums ${i === 0 ? 'text-[#c9a227]' : 'text-white/50'}`}>{b.amount}</span>
+              {/* Squad */}
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-4 flex-1 flex flex-col shadow-xl min-h-0">
+                <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-3 shrink-0">
+                  My Squad · {team?.playerCount || 0}/6
+                </p>
+                <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
+                  {team?.players?.map(p => (
+                    <div key={p._id} className="flex items-center justify-between py-2 px-3 rounded-xl bg-[#0a1628]/50 border border-[#c9a227]/8">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white/80 text-xs font-semibold truncate">{p.name}</p>
+                        <div className="flex gap-1 mt-0.5">{p.skills?.slice(0,1).map(s => <SkillBadge key={s} skill={s} />)}</div>
                       </div>
-                    ))}
-                  </div>
+                      <span className="text-[#c9a227] text-xs font-bold ml-2 shrink-0">{p.soldPrice} pts</span>
+                    </div>
+                  ))}
+                  {Array.from({ length: Math.max(0, 6 - (team?.players?.length || 0)) }).map((_, i) => (
+                    <div key={i} className="py-2 px-3 rounded-xl border border-dashed border-white/8">
+                      <p className="text-white/15 text-xs">Slot {(team?.players?.length || 0) + i + 1}</p>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </>
-          ) : (
-            <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/10 rounded-2xl flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
-              <div className="w-16 h-16 rounded-full bg-[#c9a227]/5 border border-[#c9a227]/10 flex items-center justify-center mb-4">
-                <svg className="w-7 h-7 text-[#c9a227]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 bg-[#0d1e3a] border border-[#c9a227]/10 rounded-2xl flex flex-col items-center justify-center p-12 text-center" style={{ minHeight: 'calc(100vh - 160px)' }}>
+            <div className="w-16 h-16 rounded-full bg-[#c9a227]/5 border border-[#c9a227]/10 flex items-center justify-center mb-4">
+              <svg className="w-7 h-7 text-[#c9a227]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <p className="text-white/60 text-xl font-bold mb-2">Waiting for Auction</p>
+            <p className="text-white/25 text-sm">The next player will appear here</p>
+          </div>
+        )}
+      </div>
               </div>
               <p className="text-white/60 text-xl font-bold mb-2">Waiting for Auction</p>
               <p className="text-white/25 text-sm">The next player will appear here</p>

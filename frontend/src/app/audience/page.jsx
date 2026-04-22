@@ -102,36 +102,34 @@ export default function AudiencePage() {
       }
     });
 
-    // Poll every 3 seconds as fallback when socket isn't available
+    // Poll every 4 seconds always as a safety net
     const interval = setInterval(async () => {
-      if (!connected) {
-        const [d] = await Promise.all([
-          fetch(`${BACKEND_URL}/api/auction/active-public`).then(r => r.json()),
-          fetchTeams(),
-        ]);
-        if (d.session) {
-          setActiveSession(d.session);
-          setActivePlayer(d.session.playerId);
-          setBidHistory(d.session.bids?.slice().reverse() || []);
-          setTimer({ remaining: d.session.timerRemaining, paused: d.session.timerPaused });
-        } else {
-          setActiveSession(null);
-          setActivePlayer(null);
-        }
+      const [d] = await Promise.all([
+        fetch(`${BACKEND_URL}/api/auction/active-public`).then(r => r.json()).catch(() => ({})),
+        fetchTeams(),
+      ]);
+      if (d.session) {
+        setActiveSession(d.session);
+        setActivePlayer(d.session.playerId);
+        setBidHistory(d.session.bids?.slice().reverse() || []);
+      } else if (d.session === null) {
+        setActiveSession(null);
+        setActivePlayer(null);
       }
-    }, 3000);
+    }, 4000);
 
     return () => clearInterval(interval);
-  }, [connected, fetchTeams]);
+  }, [fetchTeams]);
 
   useEffect(() => {
     const s = io(BACKEND_URL, {
       path: '/api/socket',
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 3000,
+      timeout: 10000,
+      forceNew: true,
     });
     s.on('connect', () => setConnected(true));
     s.on('disconnect', () => setConnected(false));
@@ -206,23 +204,40 @@ export default function AudiencePage() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col p-3 lg:p-4" style={{ minHeight: 'calc(100vh - 100px)' }}>
+      <div className="flex-1 flex flex-col p-3 lg:p-4 overflow-hidden" style={{ height: 'calc(100vh - 100px)' }}>
 
         {/* Auction Tab */}
         {tab === 'auction' && (
           <>
             {activeSession && activePlayer ? (
-              <div className="flex flex-col lg:flex-row gap-4" style={{ height: 'calc(100vh - 130px)' }}>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4" style={{ height: 'calc(100vh - 130px)' }}>
 
-                {/* LEFT: Player card + bid info */}
-                <div className="flex-1 min-w-0 flex flex-col gap-0">
-                  {/* Mystery or normal player card */}
+                {/* LEFT: Current Bid */}
+                <div className="lg:col-span-3 flex flex-col gap-3">
+                  <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-5 shadow-xl">
+                    <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-2">Current Bid</p>
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-5xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
+                      <span className="text-white/40 text-base font-semibold">pts</span>
+                    </div>
+                    <div className="border-t border-[#c9a227]/10 pt-3">
+                      <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1">Leading Team</p>
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${activeSession.currentHighestBidderName ? 'bg-[#c9a227]/15 border-[#c9a227]/40' : 'bg-white/5 border-white/10'}`}>
+                        {activeSession.currentHighestBidderName && <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />}
+                        <span className="text-sm font-bold text-[#c9a227]">{activeSession.currentHighestBidderName || 'No bids yet'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CENTER: Player Card */}
+                <div className="lg:col-span-6 flex flex-col h-full">
                   {activePlayer.isMysteryPlayer && activePlayer._isMasked ? (
-                    <div className="flex-1" style={{ minHeight: '320px' }}>
+                    <div className="flex-1 h-full">
                       <MysteryPlayerCard player={activePlayer} revealTokens={null} />
                     </div>
                   ) : (
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl flex-1" style={{ minHeight: '320px' }}>
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl h-full" style={{ minHeight: '400px' }}>
                     {activePlayer.photo ? (
                       <>
                         <Image src={activePlayer.photo} alt="" fill unoptimized
@@ -263,31 +278,10 @@ export default function AudiencePage() {
                     </div>
                   </div>
                   )} {/* end mystery/normal */}
-
-                  {/* Bid strip */}
-                  <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl mb-15">
-                  {/* Timer — removed */}
-                    <div className="flex items-center justify-between px-5 py-4">
-                      <div>
-                        <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-0.5">Current Bid</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-5xl font-black text-[#c9a227] tabular-nums leading-none">{activeSession.currentBid}</span>
-                          <span className="text-white/40 text-base font-semibold">pts</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white/30 text-[9px] uppercase tracking-wider mb-1">Leading</p>
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${activeSession.currentHighestBidderName ? 'bg-[#c9a227]/15 border-[#c9a227]/40' : 'bg-white/5 border-white/10'}`}>
-                          {activeSession.currentHighestBidderName && <span className="w-2 h-2 rounded-full bg-[#c9a227] animate-pulse" />}
-                          <span className="text-sm font-bold text-[#c9a227]">{activeSession.currentHighestBidderName || 'No bids yet'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
-                {/* RIGHT: Bid history — always visible, no scroll on page */}
-                <div className="w-full lg:w-72 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl flex flex-col">
+                {/* RIGHT: Bid History */}
+                <div className="lg:col-span-3 bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl flex flex-col h-full">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#c9a227]/10 shrink-0">
                     <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
                     <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>

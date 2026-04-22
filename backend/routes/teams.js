@@ -59,6 +59,10 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
       await User.findByIdAndUpdate(newCaptain, { teamId: team._id });
     }
 
+    // Notify the assigned captain via socket to reload their team
+    const io = global._io;
+    if (io && newCaptain) io.emit('team:assigned', { captainId: newCaptain, teamId: team._id.toString() });
+
     res.json({ team });
   } catch (e) {
     res.status(500).json({ error: e.message });
