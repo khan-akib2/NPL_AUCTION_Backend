@@ -160,7 +160,7 @@ function HeroSection() {
           </Link>        </div>
 
         <div className="flex items-center justify-center gap-4 sm:gap-6 flex-wrap">
-          {['56 Players', '8 Teams', 'Real-Time', 'Season 8'].map((b, i) => (
+          {['48 Players', '8 Teams', 'Real-Time', 'Season 8'].map((b, i) => (
             <div key={i} className="flex items-center gap-1.5 text-white/20 text-xs">
               <span className="w-1 h-1 rounded-full bg-[#c9a227]/40" />
               {b}
@@ -271,7 +271,7 @@ function LiveAuctionCard() {
 function FeaturesSection() {
   const features = [
     { icon: <svg className="w-5 h-5 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>, title: 'Real-Time Bidding', desc: 'Instant bid updates via WebSockets. Every bid reflects across all screens in milliseconds.' },
-    { icon: <svg className="w-5 h-5 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, title: 'Team Management', desc: 'Build your squad with a smart budget system. Track spending and acquisitions live.' },
+    { icon: <svg className="w-5 h-5 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>, title: 'Team Management', desc: 'Build a squad of 6 with a 500 pt budget. Track spending and acquisitions live.' },
     { icon: <svg className="w-5 h-5 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>, title: 'Player Analytics', desc: 'View detailed player profiles, skills, and base prices before placing strategic bids.' },
     { icon: <svg className="w-5 h-5 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, title: 'Transparent Results', desc: 'Full auction log with every bid recorded. Complete transparency for all participants.' },
   ];
@@ -307,7 +307,7 @@ function HowItWorksSection() {
   const steps = [
     { icon: <svg className="w-7 h-7 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>, title: 'Register / Login', desc: 'Sign in with your captain credentials provided by the auction admin.' },
     { icon: <svg className="w-7 h-7 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.82V15.18a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>, title: 'Join Auction', desc: 'Enter the live auction room and watch players go up for bidding in real-time.' },
-    { icon: <svg className="w-7 h-7 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, title: 'Bid & Build Team', desc: 'Place bids strategically within your budget to assemble the strongest squad.' },
+    { icon: <svg className="w-7 h-7 text-[#c9a227]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, title: 'Bid & Build Team', desc: 'Place bids strategically within your 500 pt budget to assemble a squad of 6 players.' },
   ];
 
   return (
@@ -344,10 +344,10 @@ function StatsSection() {
   }, []);
 
   const stats = [
-    { value: useCounter(56, 1500, visible), label: 'Total Players', suffix: '+' },
+    { value: useCounter(48, 1500, visible), label: 'Total Players', suffix: '' },
     { value: useCounter(8, 1200, visible), label: 'Teams', suffix: '' },
-    { value: useCounter(7, 1000, visible), label: 'Seasons', suffix: '' },
-    { value: useCounter(500, 2000, visible), label: 'Bids Placed', suffix: '+' },
+    { value: useCounter(8, 1000, visible), label: 'Season', suffix: '' },
+    { value: useCounter(500, 2000, visible), label: 'Budget Per Team', suffix: ' pts' },
   ];
 
   return (
