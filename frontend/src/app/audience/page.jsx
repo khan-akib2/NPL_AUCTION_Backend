@@ -13,6 +13,66 @@ import { displaySkills } from '@/lib/skills';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
+function TeamCard({ team, idx }) {
+  const [expanded, setExpanded] = useState(false);
+  const pct = Math.round((team.pointsSpent / 500) * 100);
+  return (
+    <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-lg lg:rounded-xl overflow-hidden">
+      <button onClick={() => setExpanded(e => !e)} className="w-full p-3 sm:p-4 lg:p-5 text-left">
+        <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+          <div className="flex items-start gap-1.5 sm:gap-2 flex-1 min-w-0">
+            <span className="text-[#c9a227]/30 text-[10px] sm:text-xs w-4 shrink-0 text-center">{idx + 1}</span>
+            {team.logo ? (
+              <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-[#c9a227]/20 bg-[#0a1628] shrink-0">
+                <Image src={team.logo} alt={team.name} fill unoptimized className="object-contain p-1" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-[#c9a227]/10 bg-[#0a1628] flex items-center justify-center shrink-0">
+                <span className="text-[#c9a227]/30 text-sm font-black">{team.name[0]}</span>
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-white font-semibold text-xs sm:text-sm truncate">{team.name}</p>
+              <p className="text-white/30 text-[10px] sm:text-xs">{team.playerCount}/6 players</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <p className="text-[#c9a227] font-bold text-xs sm:text-sm">{team.budget}</p>
+            <p className="text-white/25 text-[9px] sm:text-xs">pts left</p>
+          </div>
+        </div>
+        <div className="h-1 sm:h-1.5 bg-white/5 rounded-full overflow-hidden mb-1.5">
+          <div className="h-full bg-[#c9a227]/60 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-white/20 text-[9px] sm:text-xs">{pct}% spent</p>
+          <svg className={`w-3 h-3 text-white/20 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-[#c9a227]/10 px-3 pb-3 space-y-1.5">
+          {!team.players?.length ? (
+            <p className="text-white/20 text-xs text-center py-3">No players yet</p>
+          ) : team.players.map(p => (
+            <div key={p._id} className="flex items-center justify-between bg-[#0a1628]/60 rounded-lg px-2.5 py-2 gap-2">
+              <div className="min-w-0">
+                <p className="text-white/80 text-xs font-semibold truncate">
+                  {p.isMysteryPlayer ? 'Mystery Player' : p.name}
+                </p>
+                <p className="text-white/30 text-[10px]">{p.skills?.[0] || '—'}</p>
+              </div>
+              <span className="text-[#c9a227]/70 text-[10px] font-bold shrink-0">{p.soldPrice} pts</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AudiencePage() {
   const router = useRouter();
   const [activePlayer, setActivePlayer] = useState(null);
@@ -146,23 +206,23 @@ export default function AudiencePage() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col p-3 lg:p-6" style={{ minHeight: 'calc(100vh - 100px)' }}>
+      <div className="flex-1 flex flex-col p-3 lg:p-4" style={{ minHeight: 'calc(100vh - 100px)' }}>
 
         {/* Auction Tab */}
         {tab === 'auction' && (
           <>
             {activeSession && activePlayer ? (
-              <div className="flex flex-col lg:flex-row gap-4" style={{ height: 'calc(100vh - 140px)' }}>
+              <div className="flex flex-col lg:flex-row gap-4" style={{ height: 'calc(100vh - 130px)' }}>
 
                 {/* LEFT: Player card + bid info */}
-                <div className="flex-1 min-w-0 flex flex-col gap-3">
+                <div className="flex-1 min-w-0 flex flex-col gap-0">
                   {/* Mystery or normal player card */}
                   {activePlayer.isMysteryPlayer && activePlayer._isMasked ? (
-                    <div className="flex-1" style={{ minHeight: '360px' }}>
+                    <div className="flex-1" style={{ minHeight: '320px' }}>
                       <MysteryPlayerCard player={activePlayer} revealTokens={null} />
                     </div>
                   ) : (
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl flex-1" style={{ minHeight: '360px' }}>
+                  <div className="relative rounded-2xl overflow-hidden shadow-2xl flex-1" style={{ minHeight: '320px' }}>
                     {activePlayer.photo ? (
                       <>
                         <Image src={activePlayer.photo} alt="" fill unoptimized
@@ -205,7 +265,7 @@ export default function AudiencePage() {
                   )} {/* end mystery/normal */}
 
                   {/* Bid strip */}
-                  <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
+                  <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl mb-15">
                   {/* Timer — removed */}
                     <div className="flex items-center justify-between px-5 py-4">
                       <div>
@@ -263,39 +323,9 @@ export default function AudiencePage() {
         {/* Teams Tab */}
         {tab === 'teams' && (
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 content-start">
-            {teams.map((team, idx) => {
-              const pct = Math.round((team.pointsSpent / 500) * 100);
-              return (
-                <div key={team._id} className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-lg lg:rounded-xl p-3 sm:p-4 lg:p-5">
-                  <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                    <div className="flex items-start gap-1.5 sm:gap-2 flex-1 min-w-0">
-                      <span className="text-[#c9a227]/30 text-[10px] sm:text-xs w-4 shrink-0 text-center">{idx + 1}</span>
-                      {team.logo ? (
-                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-[#c9a227]/20 bg-[#0a1628] shrink-0">
-                          <Image src={team.logo} alt={team.name} fill unoptimized className="object-contain p-1" />
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-[#c9a227]/10 bg-[#0a1628] flex items-center justify-center shrink-0">
-                          <span className="text-[#c9a227]/30 text-sm font-black">{team.name[0]}</span>
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-white font-semibold text-xs sm:text-sm truncate">{team.name}</p>
-                        <p className="text-white/30 text-[10px] sm:text-xs">{team.playerCount}/6 players</p>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[#c9a227] font-bold text-xs sm:text-sm">{team.budget}</p>
-                      <p className="text-white/25 text-[9px] sm:text-xs">pts left</p>
-                    </div>
-                  </div>
-                  <div className="h-1 sm:h-1.5 bg-white/5 rounded-full overflow-hidden mb-1.5">
-                    <div className="h-full bg-[#c9a227]/60 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-white/20 text-[9px] sm:text-xs text-right">{pct}% spent</p>
-                </div>
-              );
-            })}
+            {teams.map((team, idx) => (
+              <TeamCard key={team._id} team={team} idx={idx} />
+            ))}
           </div>
         )}
       </div>
