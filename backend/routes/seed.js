@@ -60,6 +60,45 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/seed/fix-team-assignments?secret=<SEED_SECRET> — repair all captain→team links
+router.get('/fix-team-assignments', async (req, res) => {
+  const secret = req.query.secret;
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const teams = await Team.find({ captainId: { $ne: null } });
+    let fixed = 0;
+    for (const team of teams) {
+      await User.findByIdAndUpdate(team.captainId, { teamId: team._id });
+      fixed++;
+    }
+    res.json({ success: true, fixed });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/seed/reset-captain?secret=<SEED_SECRET>&name=affan&pass=newpass
+router.get('/reset-captain', async (req, res) => {
+  const { secret, name, pass } = req.query;
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  if (!name || !pass) return res.status(400).json({ error: 'name and pass required' });
+  try {
+    const user = await User.findOneAndUpdate(
+      { name: new RegExp(name, 'i'), role: 'captain' },
+      { $set: { passwordHash: await bcrypt.hash(pass, 10) } },
+      { returnDocument: 'after' }
+    );
+    if (!user) return res.status(404).json({ error: 'Captain not found' });
+    res.json({ success: true, name: user.name, email: user.email });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/seed/fix-shams?secret=<SEED_SECRET> — one-click update Shams credentials
 router.get('/fix-shams', async (req, res) => {
   const secret = req.query.secret;

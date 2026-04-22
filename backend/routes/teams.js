@@ -45,15 +45,18 @@ router.put('/:id', authMiddleware, adminOnly, async (req, res) => {
 
     const team = await Team.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
 
-    // Sync User.teamId when captainId changes
-    const oldCaptain = oldTeam.captainId?.toString();
-    const newCaptain = req.body.captainId?.toString();
+    // Sync User.teamId when captainId changes — compare as strings to avoid ObjectId mismatch
+    const oldCaptain = oldTeam.captainId?.toString() || null;
+    const newCaptain = req.body.captainId?.toString() || null;
 
     if (oldCaptain !== newCaptain) {
       // Remove teamId from old captain
       if (oldCaptain) await User.findByIdAndUpdate(oldCaptain, { teamId: null });
       // Assign teamId to new captain
       if (newCaptain) await User.findByIdAndUpdate(newCaptain, { teamId: team._id });
+    } else if (newCaptain) {
+      // Always ensure the captain has the correct teamId even if captainId didn't change
+      await User.findByIdAndUpdate(newCaptain, { teamId: team._id });
     }
 
     res.json({ team });
