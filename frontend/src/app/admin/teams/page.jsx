@@ -264,7 +264,7 @@ export default function TeamsPage() {
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-white/40 mb-4">
-                        <span>{team.playerCount}/6 players</span>
+                        <span>{team.playerCount}/7 players</span>
                         <span>{pct}% spent</span>
                       </div>
 

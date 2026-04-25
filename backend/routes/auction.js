@@ -119,7 +119,7 @@ router.post('/bid', authMiddleware, captainOnly, async (req, res) => {
 
     const team = await Team.findById(req.user.teamId);
     if (!team) return res.status(404).json({ error: 'Team not found' });
-    if (team.playerCount >= 6) return res.status(400).json({ error: 'Squad is full (6 players max)' });
+    if (team.playerCount >= 7) return res.status(400).json({ error: 'Squad is full (7 players max)' });
 
     // Captain cannot bid if already leading
     if (session.currentHighestBidder?.toString() === team._id.toString())

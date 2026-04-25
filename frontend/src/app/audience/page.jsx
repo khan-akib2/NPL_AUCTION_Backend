@@ -33,7 +33,7 @@ function TeamCard({ team, idx }) {
             )}
             <div className="min-w-0">
               <p className="text-white font-semibold text-xs sm:text-sm truncate">{team.name}</p>
-              <p className="text-white/30 text-[10px] sm:text-xs">{team.playerCount}/6 players</p>
+              <p className="text-white/30 text-[10px] sm:text-xs">{team.playerCount}/7 players</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
@@ -46,29 +46,35 @@ function TeamCard({ team, idx }) {
         </div>
         <div className="flex items-center justify-between">
           <p className="text-white/20 text-[9px] sm:text-xs">{pct}% spent</p>
-          <svg className={`w-3 h-3 text-white/20 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-3 h-3 text-white/20 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </button>
 
-      {expanded && (
-        <div className="border-t border-[#c9a227]/10 px-3 pb-3 space-y-1.5">
+      {/* Players list — animated expand */}
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: expanded ? '300px' : '0px' }}
+      >
+        <div className="border-t border-[#c9a227]/10 px-3 pb-3 space-y-1.5 max-h-48 overflow-y-auto">
           {!team.players?.length ? (
             <p className="text-white/20 text-xs text-center py-3">No players yet</p>
           ) : team.players.map(p => (
             <div key={p._id} className="flex items-center justify-between bg-[#0a1628]/60 rounded-lg px-2.5 py-2 gap-2">
               <div className="min-w-0">
                 <p className="text-white/80 text-xs font-semibold truncate">
-                  {p.isMysteryPlayer ? 'Mystery Player' : p.name}
+                  {p.name}
                 </p>
-                <p className="text-white/30 text-[10px]">{p.skills?.[0] || '—'}</p>
+                <p className="text-white/30 text-[10px]">
+                  {p.isMysteryPlayer ? `Mystery · ${p.skills?.[0] || '—'}` : (p.skills?.[0] || '—')}
+                </p>
               </div>
               <span className="text-[#c9a227]/70 text-[10px] font-bold shrink-0">{p.soldPrice} pts</span>
             </div>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -316,7 +322,7 @@ export default function AudiencePage() {
 
         {/* Teams Tab */}
         {tab === 'teams' && (
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 content-start">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 content-start items-start overflow-y-auto">
             {teams.map((team, idx) => (
               <TeamCard key={team._id} team={team} idx={idx} />
             ))}

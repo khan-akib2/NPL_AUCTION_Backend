@@ -168,7 +168,7 @@ export default function CaptainDashboard() {
   };
 
   const isLeading = activeSession?.currentHighestBidder?.toString() === team?._id?.toString();
-  const canBid = activeSession && team && team.playerCount < 6 && !isLeading;
+  const canBid = activeSession && team && team.playerCount < 7 && !isLeading;
   const budgetPct = team ? Math.round((team.pointsSpent / 500) * 100) : 0;
 
   // Budget alert thresholds
@@ -262,14 +262,14 @@ export default function CaptainDashboard() {
       )}
 
       {/* Mobile tabs */}
-      <div className="flex-1 p-3 lg:p-4 overflow-hidden" style={{ height: 'calc(100vh - 100px)' }}>
+      <div className="p-3 lg:p-4 overflow-hidden" style={{ height: 'calc(100vh - 88px)' }}>
         {activeSession && activePlayer ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4" style={{ height: '100%' }}>
 
             {/* LEFT: Bid Controls + History */}
-            <div className="lg:col-span-3 flex flex-col gap-3 h-full overflow-hidden">
-              {/* Bid control */}
-              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl">
+            <div className="lg:col-span-3 flex flex-col gap-3 overflow-hidden" style={{ height: '100%' }}>
+              {/* Bid control — fixed height, never grows */}
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl overflow-hidden shadow-xl shrink-0">
                 <div className="px-4 py-3 border-b border-[#c9a227]/10">
                   <p className="text-white/40 text-[10px] uppercase tracking-widest font-semibold mb-1">Current Bid</p>
                   <div className="flex items-baseline gap-2">
@@ -308,19 +308,19 @@ export default function CaptainDashboard() {
                   {bidding && <div className="flex justify-center"><Spinner size="sm" /></div>}
                   {!canBid && activeSession && (
                     <p className="text-center text-white/40 text-[10px]">
-                      {team?.playerCount >= 6 ? 'Squad full' : isLeading ? 'You are leading' : 'Low budget'}
+                      {team?.playerCount >= 7 ? 'Squad full' : isLeading ? 'You are leading' : 'Low budget'}
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Bid history */}
-              <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl overflow-hidden shadow-xl flex-1 flex flex-col min-h-0">
+              {/* Bid history — fills remaining space, scrolls */}
+              <div className="bg-[#0d1e3a] border border-[#c9a227]/15 rounded-2xl overflow-hidden shadow-xl flex flex-col min-h-0 flex-1">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-[#c9a227]/10 shrink-0">
                   <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Bid History</p>
                   <span className="text-[#c9a227] text-xs font-semibold bg-[#c9a227]/10 px-2 py-0.5 rounded-md">{bidHistory.length}</span>
                 </div>
-                <div className="flex-1 overflow-y-auto divide-y divide-[#c9a227]/5 min-h-0">
+                <div className="overflow-y-auto divide-y divide-[#c9a227]/5 flex-1 min-h-0">
                   {bidHistory.length === 0 && <p className="text-white/30 text-xs text-center py-6">No bids yet</p>}
                   {bidHistory.map((b, i) => (
                     <div key={i} className={`flex items-center justify-between px-3 py-2 ${i === 0 ? 'bg-[#c9a227]/8' : ''}`}>
@@ -333,7 +333,7 @@ export default function CaptainDashboard() {
             </div>
 
             {/* CENTER: Player Card */}
-            <div className="lg:col-span-6 flex flex-col h-full">
+            <div className="lg:col-span-6 flex flex-col overflow-hidden" style={{ height: '100%' }}>
               {activePlayer.isMysteryPlayer && activePlayer._isMasked ? (
                 <div className="h-full">
                   <MysteryPlayerCard
@@ -403,7 +403,7 @@ export default function CaptainDashboard() {
             </div>
 
             {/* RIGHT: Budget + Squad */}
-            <div className="lg:col-span-3 flex flex-col gap-3 h-full overflow-hidden">
+            <div className="lg:col-span-3 flex flex-col gap-3 overflow-hidden" style={{ height: '100%' }}>
               {/* Budget */}
               <div className={`rounded-2xl p-4 shadow-xl border shrink-0 ${budgetCritical ? 'bg-red-500/10 border-red-500/30' : budgetLow ? 'bg-orange-500/8 border-orange-400/25' : 'bg-[#0d1e3a] border-[#c9a227]/20'}`}>
                 <div className="flex items-center justify-between mb-2">
@@ -425,7 +425,7 @@ export default function CaptainDashboard() {
               {/* Squad */}
               <div className="bg-[#0d1e3a] border border-[#c9a227]/20 rounded-2xl p-4 flex-1 flex flex-col shadow-xl min-h-0">
                 <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-3 shrink-0">
-                  My Squad · {team?.playerCount || 0}/6
+                  My Squad · {team?.playerCount || 0}/7
                 </p>
                 <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
                   {team?.players?.map(p => (
@@ -437,7 +437,7 @@ export default function CaptainDashboard() {
                       <span className="text-[#c9a227] text-xs font-bold ml-2 shrink-0">{p.soldPrice} pts</span>
                     </div>
                   ))}
-                  {Array.from({ length: Math.max(0, 6 - (team?.players?.length || 0)) }).map((_, i) => (
+                  {Array.from({ length: Math.max(0, 7 - (team?.players?.length || 0)) }).map((_, i) => (
                     <div key={i} className="py-2 px-3 rounded-xl border border-dashed border-white/8">
                       <p className="text-white/15 text-xs">Slot {(team?.players?.length || 0) + i + 1}</p>
                     </div>
